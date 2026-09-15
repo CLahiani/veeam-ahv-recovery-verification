@@ -5,7 +5,7 @@
 ## How a run works
 
 ```
-Step 0  PRE-FLIGHT   Authenticate to VBR, AHV appliance, Prism Central.
+Step 0  PRE-FLIGHT   Authenticate to VBR (+ AHV plug-in API), Prism Central.
                      Check cluster / container / subnet exist, subnet is isolated,
                      no foreign VM on it, no leftover test VM.        → CP00–CP04
 Step 1  RESTORE      For each VM: latest restore point, RPO check, full restore
@@ -47,7 +47,7 @@ Restores are launched for all VMs first (Step 1), then verified one by one (Step
 
 ### Configuration overrides
 
-Every value of the JSON file (except `AppChecks`) can be overridden for one run: `-VbrServer`, `-VbrPort`, `-AhvAppliance`, `-AhvApiVersion`, `-PrismCentral`, `-PrismPort`, `-TargetClusterName`, `-IsolatedNetworkName`, `-StorageContainerName`, `-VmNamePrefix`, `-MaxRestorePointAgeHours`, `-MaxRestoreMinutes`, `-BootTimeoutMinutes`. See [Configuration](configuration.md).
+Every value of the JSON file (except `AppChecks`) can be overridden for one run: `-VbrServer`, `-VbrPort`, `-VbrApiVersion`, `-AhvIntegrated`, `-AhvAppliance`, `-AhvApiVersion`, `-PrismCentral`, `-PrismPort`, `-TargetClusterName`, `-IsolatedNetworkName`, `-StorageContainerName`, `-VmNamePrefix`, `-MaxRestorePointAgeHours`, `-MaxRestoreMinutes`, `-BootTimeoutMinutes`. See [Configuration](configuration.md).
 
 ## Typical scenarios
 
@@ -57,7 +57,15 @@ Every value of the JSON file (except `AppChecks`) can be overridden for one run:
 .\Test-AhvBackupRestore.ps1 -VmNames SRV-FILE01 -WhatIf -Verbose
 ```
 
-Authenticates to the three systems and runs CP00–CP04. Nothing is restored. Fix any `KO` before going further.
+Authenticates to VBR and Prism (plus the appliance in 12.x) and runs CP00–CP04. Nothing is restored. Fix any `KO` before going further. CP00's detail shows the mode in use (`VBR 13.x integrated plug-in (v9)` or `12.x appliance …`).
+
+### Legacy VBR 12.x with the standalone appliance
+
+```powershell
+.\Test-AhvBackupRestore.ps1 -VmNames SRV-A -Cleanup -AhvIntegrated:$false -AhvAppliance veeam-ahv.local -AhvApiVersion v8 -VbrApiVersion 1.2-rev0
+```
+
+Or set `Veeam.AhvIntegrated: false` (with `AhvAppliance`, `AhvApiVersion: "v8"`, `VbrApiVersion: "1.2-rev0"`) in the JSON file. A third credential (appliance) is then prompted.
 
 ### Verify a couple of VMs, keep them for manual inspection
 
@@ -142,8 +150,11 @@ Colours: green `OK`, red `KO`, yellow `WARN`, grey `SKIP`. A summary table per V
 
 | Symptom | Likely cause / fix |
 |---|---|
-| CP00 KO `HTTP 401` | Wrong credentials, or VBR API version header not accepted → adjust `Veeam.VbrApiVersion`. |
-| CP01 KO `subnet '…' not found` | Network created in Prism but appliance inventory not refreshed → rescan the cluster in the Veeam AHV appliance. |
+| CP00 KO `HTTP 401` | Wrong credentials, or VBR API version header not accepted → `Veeam.VbrApiVersion` = `1.3-rev1` (13.x) / `1.2-rev0` (12.x). |
+| CP00 KO `HTTP 404` on `/extension/…/api/v9/clusters` | 13.x mode against a 12.x server, or AHV plug-in not installed on the VBR server → check `AhvIntegrated`, or install the plug-in (Backup Infrastructure → Add Server → Nutanix AHV). |
+| CP00 KO connection refused on appliance | `AhvIntegrated: false` against a 13.x environment where the appliance no longer exists → set `AhvIntegrated: true`, `AhvApiVersion: v9`. |
+| CP01 KO `subnet '…' not found` | Network created in Prism but plug-in inventory not refreshed → rescan the Nutanix server in VBR (13.x) or in the appliance (12.x). |
+| CP12 KO / CP13 WARN, restore slow to start (13.x) | Worker powered off or updating at session start; no worker on the target cluster (VBR borrows one from another cluster). Add a worker per cluster, disable the worker update check, raise `MaxRestoreMinutes`. |
 | CP02 KO `is_external=True` or `gateway=…` | Subnet is routed. Recreate it as a plain non-routed VLAN without gateway. |
 | CP04 KO `leftover VM(s)` | Previous run without `-Cleanup`. Rerun with `-Cleanup` or delete `RV-*` VMs in Prism. |
 | CP10 KO `no Nutanix AHV restore point` | Name must match Veeam exactly (case-insensitive, but no wildcard). Check the VM is in an AHV backup job with at least one restore point. |
@@ -152,6 +163,6 @@ Colours: green `OK`, red `KO`, yellow `WARN`, grey `SKIP`. A summary table per V
 | CP23 / CP30 SKIP | `-PingCheck` not set, or no IP, or no `AppChecks` entry for that VM. Probe must be on the isolated subnet. |
 | CP30 SKIP `SqlServer module missing` | `Install-Module SqlServer`. |
 | CP40 KO `delete '…' manually` | Prism refused the delete (rights, or VM still powering off). Delete it in Prism. |
-| `HTTP 404` on appliance calls | Wrong `Veeam.AhvApiVersion` (`v8` vs `v9`). |
+| `HTTP 404` on plug-in calls | Wrong `Veeam.AhvApiVersion` (`v9` for 13.x, `v8` for the 12.x appliance). |
 
 Lines tagged `# [API]` in the script are the ones most likely to need adjustment if a Veeam or Nutanix upgrade changes a response field name.

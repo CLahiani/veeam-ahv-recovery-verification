@@ -9,9 +9,26 @@
 | PowerShell | **7.2 or later** (`pwsh`). Windows PowerShell 5.1 is not supported (`SkipCertificateCheck`, ternary operator, `ConvertFrom-Json -AsHashtable`). |
 | OS of the probe machine | Windows recommended. `Test-NetConnection` and `Resolve-DnsName` (used by Tcp / Ldap / Dns checks) are Windows cmdlets. On Linux, only Http and Sql checks work. |
 | `SqlServer` module | Only if `Sql` application checks are defined: `Install-Module SqlServer -Scope CurrentUser` |
-| Veeam Backup & Replication | REST API enabled (default port **9419**). Tested against API version header `1.2-rev0`; adjust `Veeam.VbrApiVersion` for your build. |
-| Veeam Plug-in for Nutanix AHV | Appliance reachable over HTTPS; REST API prefix `v8` (or `v9`…) set in `Veeam.AhvApiVersion`. |
+| Veeam Backup & Replication | REST API enabled (default port **9419**). `Veeam.VbrApiVersion` = `1.3-rev1` for VBR 13.x, `1.2-rev0` for 12.x. |
+| Veeam Plug-in for Nutanix AHV | See [Veeam 13.x vs 12.x](#veeam-13x-integrated-plug-in-vs-12x-appliance) below. |
 | Nutanix Prism Central | v3 API (default port **9440**). |
+
+## Veeam 13.x (integrated plug-in) vs 12.x (appliance)
+
+The way the script talks to the AHV plug-in depends on your Veeam version. Set `Veeam.AhvIntegrated` accordingly (default `true`).
+
+| | **VBR 13.x** — `AhvIntegrated: true` | **VBR 12.x** — `AhvIntegrated: false` |
+|---|---|---|
+| Architecture | Plug-in integrated into VBR; **workers** (lightweight Linux VMs deployed on the AHV cluster by VBR) move the data. No standalone appliance. | Standalone Veeam Plug-in for Nutanix AHV appliance (proxy VM). |
+| Plug-in REST API base URL | `https://<VBR server>/extension/799a5a3e-ae1e-4eaf-86eb-8a9acc2670e2/api/v9` | `https://<appliance>/api/v8` |
+| Authentication | **VBR OAuth token** reused (`/api/oauth2/token` on port 9419). No third credential. | Appliance's own OAuth endpoint (`-AhvCredential`). |
+| `AhvApiVersion` | `v9` | `v8` |
+| `AhvAppliance` | Ignored | FQDN / IP of the appliance |
+| Minimum versions | VBR **13.0.1.1071+**, plug-in **13.9.0.212+**, AOS **6.8.1.6+**, Prism Central pc.2022.6 – pc.2024.3.1.10 or **pc.7.3+** (pc.7.3.1.2, 7.3.1.3 and 7.5.0.0 are excluded). iSCSI Data Services IP configured on the cluster. | Plug-in 6/7/8 per Veeam compatibility matrix. |
+
+**Workers (13.x).** At least one AHV worker must be configured in VBR (*Backup Infrastructure → Backup Proxies → Add → Nutanix AHV worker*), ideally one per cluster. VBR powers the worker on when a restore session starts and off when it ends, so the first restore of a run can take a few extra minutes (worker boot, plus an optional update check that can be disabled in the worker properties). Account for this in `Thresholds.MaxRestoreMinutes`. The script does not manage workers — VBR does.
+
+**Endpoints.** The plug-in endpoints used by the script (`/clusters`, `/clusters/{id}/networks`, `/clusters/{id}/storageContainers`, `/restorePoints/restore`, `/sessions/{id}`) are identical in v8 and v9. The only difference is NIC discovery: v9 uses `/restorePoints/{id}/metadata` (v8's `/networkAdapters` is deprecated); the script tries `metadata` first and falls back automatically.
 
 ## 2. Network: the isolated subnet
 
@@ -33,8 +50,8 @@ The script must run from a machine that can reach:
 
 | Destination | Port | Purpose |
 |---|---|---|
-| VBR server | 9419/tcp | Find the latest restore points |
-| Veeam AHV appliance | 443/tcp | Launch and track restores |
+| VBR server | 9419/tcp | Find the latest restore points, authenticate |
+| VBR server (13.x) **or** AHV appliance (12.x) | 443/tcp | Launch and track restores via the plug-in REST API |
 | Prism Central | 9440/tcp | Inspect VMs / subnets, power off, delete |
 | Isolated subnet | ICMP, app ports | CP23 ping and CP30 application checks |
 
@@ -42,21 +59,21 @@ For the last line the probe needs a **second NIC attached to the isolated subnet
 
 ## 4. Accounts
 
-Three sets of credentials are requested at run time (or passed with `-VbrCredential`, `-AhvCredential`, `-PrismCredential`):
+Credentials are requested at run time (or passed with `-VbrCredential`, `-PrismCredential`, and `-AhvCredential` for 12.x):
 
 | System | Minimum role |
 |---|---|
-| Veeam Backup & Replication | **Veeam Restore Operator** (read restore points). |
-| Veeam Plug-in for Nutanix AHV appliance | Account allowed to start a VM restore (Portal Administrator or Restore Operator). |
+| Veeam Backup & Replication | 13.x: a role allowed to **read restore points and start Nutanix AHV VM restores** (Veeam Restore Operator, or a scoped custom RBAC role introduced in 13.1). 12.x: Veeam Restore Operator. |
+| Veeam Plug-in for Nutanix AHV appliance (**12.x only**) | Account allowed to start a VM restore (Portal Administrator or Restore Operator). |
 | Prism Central | **Cluster Admin** or a custom role with *view VM / subnet*, *update VM* (power off) and *delete VM*. |
 
 Use dedicated service accounts. For unattended runs, store the credentials in a vault and retrieve them with [Microsoft.PowerShell.SecretManagement](https://github.com/PowerShell/SecretManagement):
 
 ```powershell
 $vbr   = Get-Secret -Name RV-VBR   -AsPlainText:$false
-$ahv   = Get-Secret -Name RV-AHV   -AsPlainText:$false
 $prism = Get-Secret -Name RV-Prism -AsPlainText:$false
-.\Test-AhvBackupRestore.ps1 -VmNames SRV-A -Cleanup -VbrCredential $vbr -AhvCredential $ahv -PrismCredential $prism
+.\Test-AhvBackupRestore.ps1 -VmNames SRV-A -Cleanup -VbrCredential $vbr -PrismCredential $prism
+# 12.x: add  -AhvCredential (Get-Secret -Name RV-AHV -AsPlainText:$false)
 ```
 
 ## 5. Install the script
@@ -81,7 +98,7 @@ $prism = Get-Secret -Name RV-Prism -AsPlainText:$false
 
 ## 6. TLS certificates
 
-All API calls use `-SkipCertificateCheck` because Veeam and Nutanix appliances usually ship with self-signed certificates. If your appliances carry trusted certificates and you want strict validation, remove `SkipCertificateCheck = $true` in `Invoke-Api`, `Connect-Vbr` and `Connect-AhvAppliance`.
+All API calls use `-SkipCertificateCheck` because Veeam and Nutanix components usually ship with self-signed certificates. If they carry trusted certificates and you want strict validation, remove `SkipCertificateCheck = $true` in `Invoke-Api`, `Connect-Vbr` and `Connect-AhvAppliance`.
 
 ## Next step
 
