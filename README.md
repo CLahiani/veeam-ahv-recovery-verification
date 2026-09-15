@@ -5,6 +5,7 @@
 ![PowerShell 7.2+](https://img.shields.io/badge/PowerShell-7.2%2B-5391FE?logo=powershell&logoColor=white)
 ![License MIT](https://img.shields.io/badge/License-MIT-green)
 ![Platform Nutanix AHV](https://img.shields.io/badge/Platform-Nutanix%20AHV-024DA1)
+![Veeam 13.x / 12.x](https://img.shields.io/badge/Veeam-13.x%20%7C%2012.x-00B336)
 
 ---
 
@@ -43,6 +44,15 @@ Each run restores a sample of VMs from their latest restore points into an **iso
 ```
 
 Exit code: `0` all checkpoints OK · `1` at least one checkpoint failed · `2` blocking pre-flight error.
+
+### Veeam version support
+
+| Veeam | Mode | Configuration |
+|---|---|---|
+| **VBR 13.x / 13.1** — AHV plug-in integrated into VBR, **worker** architecture, no standalone appliance | Default | `AhvIntegrated: true`, `AhvApiVersion: "v9"`, `VbrApiVersion: "1.3-rev1"`. Only VBR + Prism credentials. |
+| **VBR 12.x** — standalone Veeam Plug-in for Nutanix AHV appliance | Legacy | `AhvIntegrated: false`, `AhvAppliance`, `AhvApiVersion: "v8"`, `VbrApiVersion: "1.2-rev0"`. Third credential for the appliance. |
+
+In 13.x the plug-in REST API is served by the VBR server (`/extension/…/api/v9`) with the VBR OAuth token; the restore endpoints are unchanged. Details in [Installation](docs/en/installation.md#veeam-13x-integrated-plug-in-vs-12x-appliance).
 
 ### Documentation
 
@@ -100,6 +110,15 @@ Chaque exécution restaure un échantillon de VM depuis leurs derniers points de
 ```
 
 Code de sortie : `0` tous les points de contrôle OK · `1` au moins un point de contrôle en échec · `2` erreur bloquante en pré-vol.
+
+### Versions Veeam prises en charge
+
+| Veeam | Mode | Configuration |
+|---|---|---|
+| **VBR 13.x / 13.1** — plug-in AHV intégré à VBR, architecture à **workers**, plus d'appliance autonome | Défaut | `AhvIntegrated: true`, `AhvApiVersion: "v9"`, `VbrApiVersion: "1.3-rev1"`. Identifiants VBR + Prism uniquement. |
+| **VBR 12.x** — appliance autonome Veeam Plug-in for Nutanix AHV | Ancien | `AhvIntegrated: false`, `AhvAppliance`, `AhvApiVersion: "v8"`, `VbrApiVersion: "1.2-rev0"`. Troisième identifiant pour l'appliance. |
+
+En 13.x, l'API REST du plug-in est servie par le serveur VBR (`/extension/…/api/v9`) avec le jeton OAuth de VBR ; les endpoints de restauration sont inchangés. Détails dans [Installation](docs/fr/installation.md#veeam-13x-plug-in-intégré-vs-12x-appliance).
 
 ### Documentation
 

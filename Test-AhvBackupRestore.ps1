@@ -93,22 +93,43 @@ SOFTWARE.
       CP30  Application checks (one CP per test)        | Contrôles applicatifs (un CP par test)
       CP40  Test VM deleted (-Cleanup)                  | VM de test supprimée (-Cleanup)
 
+    [EN] VEEAM VERSIONS (Veeam.AhvIntegrated in the configuration)
+      - true  (default) : VBR 13.x with the Veeam Plug-in for Nutanix AHV integrated into VBR
+                          (worker-based architecture, no standalone appliance). The plug-in REST API
+                          is served by the VBR server at /extension/<id>/api/v9 and uses the VBR
+                          OAuth token: only VBR and Prism credentials are needed.
+      - false           : VBR 12.x with the standalone Veeam Plug-in for Nutanix AHV appliance
+                          (REST API v8 on the appliance, its own credentials).
+    [FR] VERSIONS VEEAM (Veeam.AhvIntegrated dans la configuration)
+      - true  (défaut)  : VBR 13.x avec le Veeam Plug-in for Nutanix AHV intégré à VBR (architecture
+                          à workers, plus d'appliance autonome). L'API REST du plug-in est servie par
+                          le serveur VBR sur /extension/<id>/api/v9 avec le jeton OAuth de VBR :
+                          seuls les identifiants VBR et Prism sont nécessaires.
+      - false           : VBR 12.x avec l'appliance autonome Veeam Plug-in for Nutanix AHV
+                          (API REST v8 sur l'appliance, identifiants propres).
+
     [EN] PREREQUISITES
       - PowerShell 7.2 or later.
+      - VBR 13.x: VBR 13.0.1.1071+ with AHV plug-in 13.9.0.212+, AOS 6.8.1.6+, Prism Central
+        pc.2022.6 - pc.2024.3.1.10 or pc.7.3+ (7.3.1.2 / 7.3.1.3 / 7.5.0.0 excluded), at least one
+        AHV worker configured in VBR (Backup Infrastructure > Backup Proxies).
       - An isolated AHV subnet (non-routed VLAN, no gateway) created in Prism.
       - A "probe" machine connected to that subnet to run the script, or at least for CP23 / CP30
         (otherwise they stay SKIP).
-      - Accounts: VBR (Veeam Restore Operator role), Veeam Plug-in for Nutanix AHV appliance,
-        Prism Central (Cluster Admin or equivalent with VM create / delete rights).
+      - Accounts: VBR (Veeam Restore Operator role), Prism Central (Cluster Admin or equivalent with
+        VM create / delete rights), plus the appliance account when AhvIntegrated = false.
       - PowerShell module "SqlServer" only if Sql checks are defined.
 
     [FR] PRÉREQUIS
       - PowerShell 7.2 ou supérieur.
+      - VBR 13.x : VBR 13.0.1.1071+ avec plug-in AHV 13.9.0.212+, AOS 6.8.1.6+, Prism Central
+        pc.2022.6 - pc.2024.3.1.10 ou pc.7.3+ (7.3.1.2 / 7.3.1.3 / 7.5.0.0 exclus), au moins un
+        worker AHV configuré dans VBR (Backup Infrastructure > Backup Proxies).
       - Un sous-réseau AHV isolé (VLAN non routé, sans passerelle) créé dans Prism.
       - Une machine « sonde » connectée à ce sous-réseau pour exécuter le script, ou au moins pour
         CP23 / CP30 (sinon ils restent en SKIP).
-      - Comptes : VBR (rôle Veeam Restore Operator), appliance Veeam Plug-in for Nutanix AHV,
-        Prism Central (Cluster Admin ou équivalent avec création / suppression de VM).
+      - Comptes : VBR (rôle Veeam Restore Operator), Prism Central (Cluster Admin ou équivalent avec
+        création / suppression de VM), plus le compte appliance si AhvIntegrated = false.
       - Module PowerShell « SqlServer » uniquement si des contrôles Sql sont définis.
 
     [EN] QUICK START
@@ -116,16 +137,16 @@ SOFTWARE.
       2. Edit RecoveryVerification.json (servers, target, thresholds, application checks).
       3. Run:  .\Test-AhvBackupRestore.ps1 -VmNames SRV-A,SRV-B -Cleanup
       4. Open the HTML report in -ReportDir.
-      Credentials are prompted, or passed with -VbrCredential / -AhvCredential / -PrismCredential
-      (e.g. from a vault via Microsoft.PowerShell.SecretManagement).
+      Credentials are prompted, or passed with -VbrCredential / -PrismCredential (and -AhvCredential
+      for the 12.x appliance), e.g. from a vault via Microsoft.PowerShell.SecretManagement.
 
     [FR] DÉMARRAGE RAPIDE
       1. Générer le modèle de configuration :  .\Test-AhvBackupRestore.ps1 -InitConfig
       2. Renseigner RecoveryVerification.json (serveurs, cible, seuils, contrôles applicatifs).
       3. Lancer :  .\Test-AhvBackupRestore.ps1 -VmNames SRV-A,SRV-B -Cleanup
       4. Ouvrir le rapport HTML dans -ReportDir.
-      Les identifiants sont demandés, ou fournis via -VbrCredential / -AhvCredential / -PrismCredential
-      (par exemple depuis un coffre : Microsoft.PowerShell.SecretManagement).
+      Les identifiants sont demandés, ou fournis via -VbrCredential / -PrismCredential (et -AhvCredential
+      pour l'appliance 12.x), par exemple depuis un coffre : Microsoft.PowerShell.SecretManagement.
 
     REFERENCES / RÉFÉRENCES
       - Veeam Backup & Replication REST API     https://helpcenter.veeam.com/references/vbr
@@ -151,6 +172,10 @@ SOFTWARE.
 .PARAMETER Language
     [EN] Output language: en or fr. Default: system culture (fr-* -> fr, otherwise en).
     [FR] Langue des sorties : en ou fr. Défaut : culture système (fr-* -> fr, sinon en).
+
+.PARAMETER AhvIntegrated
+    [EN] $true = VBR 13.x integrated plug-in (default), $false = 12.x standalone appliance. Overrides Veeam.AhvIntegrated.
+    [FR] $true = plug-in intégré VBR 13.x (défaut), $false = appliance autonome 12.x. Surcharge Veeam.AhvIntegrated.
 
 .PARAMETER PingCheck
     [EN] Enable CP23 (ping the restored VM from this machine).   [FR] Active CP23 (ping depuis cette machine).
@@ -179,6 +204,10 @@ SOFTWARE.
     .\Test-AhvBackupRestore.ps1 -VmNames $sample -Cleanup
 
 .EXAMPLE
+    .\Test-AhvBackupRestore.ps1 -VmNames SRV-A -Cleanup -AhvIntegrated:$false -AhvAppliance veeam-ahv.local -AhvApiVersion v8 -VbrApiVersion 1.2-rev0
+    [EN] Legacy VBR 12.x with standalone appliance.   [FR] Ancien mode VBR 12.x avec appliance autonome.
+
+.EXAMPLE
     .\Test-AhvBackupRestore.ps1 -VmNames SRV-A -Cleanup -WhatIf
     [EN] Show restore / delete actions without executing them.   [FR] Simule sans exécuter.
 #>
@@ -195,6 +224,8 @@ param(
     # --- Optional overrides of the configuration file / Surcharges facultatives ---
     [string] $VbrServer,
     [int]    $VbrPort,
+    [string] $VbrApiVersion,
+    [nullable[bool]] $AhvIntegrated,
     [string] $AhvAppliance,
     [string] $AhvApiVersion,
     [string] $PrismCentral,
@@ -443,9 +474,10 @@ $DefaultConfig = [ordered]@{
     Veeam = [ordered]@{
         VbrServer     = "vbr.example.local"        # Veeam Backup & Replication server
         VbrPort       = 9419                       # VBR REST API port (default 9419)
-        VbrApiVersion = "1.2-rev0"                 # x-api-version header expected by VBR
-        AhvAppliance  = "veeam-ahv.example.local"  # Veeam Plug-in for Nutanix AHV appliance
-        AhvApiVersion = "v8"                       # Plug-in API prefix (v8, v9...)
+        VbrApiVersion = "1.3-rev1"                 # x-api-version header: 1.3-rev1 = VBR 13.x, 1.2-rev0 = VBR 12.x
+        AhvIntegrated = $true                      # true = VBR 13.x (plug-in integrated, workers) | false = 12.x appliance
+        AhvAppliance  = "veeam-ahv.example.local"  # 12.x only: standalone Veeam Plug-in for Nutanix AHV appliance
+        AhvApiVersion = "v9"                       # Plug-in API version: v9 = VBR 13.x integrated, v8 = 12.x appliance
     }
     Nutanix = [ordered]@{
         PrismCentral = "prism.example.local"
@@ -498,7 +530,8 @@ function Merge-Config {
     else { Write-Warning (L M_NoConfig $FilePath) }
 
     $map = @{
-        VbrServer = 'Veeam.VbrServer'; VbrPort = 'Veeam.VbrPort'; AhvAppliance = 'Veeam.AhvAppliance'; AhvApiVersion = 'Veeam.AhvApiVersion'
+        VbrServer = 'Veeam.VbrServer'; VbrPort = 'Veeam.VbrPort'; VbrApiVersion = 'Veeam.VbrApiVersion'; AhvIntegrated = 'Veeam.AhvIntegrated'
+        AhvAppliance = 'Veeam.AhvAppliance'; AhvApiVersion = 'Veeam.AhvApiVersion'
         PrismCentral = 'Nutanix.PrismCentral'; PrismPort = 'Nutanix.PrismPort'
         TargetClusterName = 'Target.ClusterName'; IsolatedNetworkName = 'Target.IsolatedNetworkName'
         StorageContainerName = 'Target.StorageContainerName'; VmNamePrefix = 'Target.VmNamePrefix'
@@ -512,8 +545,9 @@ function Merge-Config {
 
 if (-not $VmNames -or $VmNames.Count -eq 0) { throw (L M_NeedVm) }
 $Cfg = Merge-Config $DefaultConfig $ConfigPath $PSBoundParameters
+$AhvIntegratedMode = [bool]$Cfg.Veeam.AhvIntegrated
 if (-not $VbrCredential)   { $VbrCredential   = Get-Credential -Message (L M_CredVbr   $Cfg.Veeam.VbrServer) }
-if (-not $AhvCredential)   { $AhvCredential   = Get-Credential -Message (L M_CredAhv   $Cfg.Veeam.AhvAppliance) }
+if (-not $AhvIntegratedMode -and -not $AhvCredential) { $AhvCredential = Get-Credential -Message (L M_CredAhv $Cfg.Veeam.AhvAppliance) }
 if (-not $PrismCredential) { $PrismCredential = Get-Credential -Message (L M_CredPrism $Cfg.Nutanix.PrismCentral) }
 
 #endregion
@@ -617,12 +651,44 @@ function Connect-Vbr {
 }
 
 function Connect-AhvAppliance {
+    <#
+      [EN] 12.x: standalone appliance with its own OAuth endpoint (API v8).
+      [FR] 12.x : appliance autonome avec son propre point d'authentification OAuth (API v8).
+    #>
     param($Server, $ApiVersion, [PSCredential]$Credential)
     $base = "https://$Server/api"
     $tok = Invoke-RestMethod -Method Post -Uri "$base/oauth2/token" -SkipCertificateCheck -TimeoutSec 60 `
         -ContentType 'application/x-www-form-urlencoded' `
         -Body @{ grant_type = 'password'; username = $Credential.UserName; password = $Credential.GetNetworkCredential().Password }
     return @{ Base = "$base/$ApiVersion"; Headers = @{ Authorization = "Bearer $($tok.access_token)" } }
+}
+
+function Connect-AhvIntegrated {
+    <#
+      [EN] 13.x: the plug-in is integrated into VBR. Its REST API is served by the VBR server under
+           /extension/<plug-in id>/api/<version> and accepts the VBR access token (no separate login).
+      [FR] 13.x : le plug-in est intégré à VBR. Son API REST est servie par le serveur VBR sous
+           /extension/<id du plug-in>/api/<version> et accepte le jeton d'accès VBR (pas de login séparé).
+    #>
+    param($VbrServer, $ApiVersion, $Vbr)
+    $ExtensionId = '799a5a3e-ae1e-4eaf-86eb-8a9acc2670e2'   # Veeam Plug-in for Nutanix AHV extension id (fixed)
+    $ctx = @{ Base = "https://$VbrServer/extension/$ExtensionId/api/$ApiVersion"; Headers = @{ Authorization = $Vbr.Headers.Authorization } }
+    Invoke-Api GET "$($ctx.Base)/clusters" $ctx.Headers | Out-Null   # connection test
+    return $ctx
+}
+
+function Get-RestorePointNics {
+    <#
+      [EN] NICs of a restore point: /metadata (v9) first, legacy /networkAdapters (v8, deprecated in v9) as fallback.
+      [FR] Cartes réseau d'un point de restauration : /metadata (v9) d'abord, /networkAdapters (v8, déprécié) en secours.
+    #>
+    param($Ahv, [string]$RestorePointId)
+    try {
+        $meta = Invoke-Api GET "$($Ahv.Base)/restorePoints/$RestorePointId/metadata" $Ahv.Headers   # [API]
+        if ($meta.PSObject.Properties['networkAdapters'] -and $null -ne $meta.networkAdapters) { return @($meta.networkAdapters) }
+    }
+    catch { Write-Verbose "metadata endpoint unavailable, falling back to /networkAdapters: $($_.Exception.Message)" }
+    return Get-Items (Invoke-Api GET "$($Ahv.Base)/restorePoints/$RestorePointId/networkAdapters" $Ahv.Headers)
 }
 
 function Connect-Prism {
@@ -651,7 +717,7 @@ function Get-LatestRestorePoint {
 function Start-IsolatedRestore {
     <# Full VM restore into the isolated subnet through the AHV appliance. Returns session id. #>
     param($Ahv, $RestorePoint, $Cluster, $Container, $Network, [string]$TargetName, [string]$Reason)
-    $nics = Get-Items (Invoke-Api GET "$($Ahv.Base)/restorePoints/$($RestorePoint.id)/networkAdapters" $Ahv.Headers)
+    $nics = Get-RestorePointNics $Ahv $RestorePoint.id
     $nicMap = @($nics | ForEach-Object { @{ value = @{ networkId = $Network.id; ipAddresses = @(); macAddress = $_.macAddress } } })
     $body = @{
         restorePointId = $RestorePoint.id; restoreToOriginal = $false; targetVmClusterId = $Cluster.id
@@ -853,10 +919,12 @@ try {
     Write-Step (L Step0)
     # ---------------------------------------------------------------------------------
     try {
-        $Vbr   = Connect-Vbr          $Cfg.Veeam.VbrServer $Cfg.Veeam.VbrPort $Cfg.Veeam.VbrApiVersion $VbrCredential
-        $Ahv   = Connect-AhvAppliance $Cfg.Veeam.AhvAppliance $Cfg.Veeam.AhvApiVersion $AhvCredential
-        $Prism = Connect-Prism        $Cfg.Nutanix.PrismCentral $Cfg.Nutanix.PrismPort $PrismCredential
-        Add-Checkpoint CP00 -Label (L CP00) -Status OK
+        $Vbr   = Connect-Vbr $Cfg.Veeam.VbrServer $Cfg.Veeam.VbrPort $Cfg.Veeam.VbrApiVersion $VbrCredential
+        $Ahv   = if ($AhvIntegratedMode) { Connect-AhvIntegrated $Cfg.Veeam.VbrServer $Cfg.Veeam.AhvApiVersion $Vbr }
+                 else                    { Connect-AhvAppliance  $Cfg.Veeam.AhvAppliance $Cfg.Veeam.AhvApiVersion $AhvCredential }
+        $Prism = Connect-Prism $Cfg.Nutanix.PrismCentral $Cfg.Nutanix.PrismPort $PrismCredential
+        $mode  = if ($AhvIntegratedMode) { "VBR 13.x integrated plug-in ($($Cfg.Veeam.AhvApiVersion))" } else { "12.x appliance $($Cfg.Veeam.AhvAppliance) ($($Cfg.Veeam.AhvApiVersion))" }
+        Add-Checkpoint CP00 -Label (L CP00) -Status OK -Detail $mode
     }
     catch { Add-Checkpoint CP00 -Label (L CP00) -Status KO -Detail $_.Exception.Message; throw [System.Exception]::new('PREFLIGHT', $_.Exception) }
 

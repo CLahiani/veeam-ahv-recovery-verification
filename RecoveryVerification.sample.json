@@ -2,9 +2,10 @@
   "Veeam": {
     "VbrServer": "vbr.example.local",
     "VbrPort": 9419,
-    "VbrApiVersion": "1.2-rev0",
+    "VbrApiVersion": "1.3-rev1",
+    "AhvIntegrated": true,
     "AhvAppliance": "veeam-ahv.example.local",
-    "AhvApiVersion": "v8"
+    "AhvApiVersion": "v9"
   },
   "Nutanix": {
     "PrismCentral": "prism.example.local",

@@ -4,6 +4,17 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 Toutes les évolutions notables de ce projet sont consignées ici. Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [1.1.0] - 2026-09-15
+
+### Added / Ajouté
+- **EN** Support for **VBR 13.x / 13.1** with the AHV plug-in integrated into VBR (worker architecture). New `Veeam.AhvIntegrated` key (default `true`) and `-AhvIntegrated` / `-VbrApiVersion` overrides. In integrated mode the plug-in REST API is reached through the VBR server (`/extension/799a5a3e-ae1e-4eaf-86eb-8a9acc2670e2/api/v9`) with the VBR OAuth token; no appliance credential is prompted. `Connect-AhvIntegrated` and `Get-RestorePointNics` functions.
+- **FR** Prise en charge de **VBR 13.x / 13.1** avec le plug-in AHV intégré à VBR (architecture à workers). Nouvelle clé `Veeam.AhvIntegrated` (défaut `true`) et surcharges `-AhvIntegrated` / `-VbrApiVersion`. En mode intégré, l'API REST du plug-in est atteinte via le serveur VBR (`/extension/799a5a3e-ae1e-4eaf-86eb-8a9acc2670e2/api/v9`) avec le jeton OAuth de VBR ; aucun identifiant appliance n'est demandé. Fonctions `Connect-AhvIntegrated` et `Get-RestorePointNics`.
+
+### Changed / Modifié
+- **EN** Defaults: `VbrApiVersion` `1.3-rev1`, `AhvApiVersion` `v9`. NIC discovery uses `/restorePoints/{id}/metadata` (v9) with automatic fallback to the deprecated `/networkAdapters` (v8). CP00 detail now shows the mode in use. Docs (EN/FR) updated: 13.x prerequisites, workers, troubleshooting.
+- **FR** Valeurs par défaut : `VbrApiVersion` `1.3-rev1`, `AhvApiVersion` `v9`. La découverte des cartes réseau utilise `/restorePoints/{id}/metadata` (v9) avec bascule automatique vers `/networkAdapters` (v8, déprécié). Le détail de CP00 indique désormais le mode utilisé. Docs (EN/FR) mises à jour : prérequis 13.x, workers, dépannage.
+- **EN/FR** 12.x standalone appliance remains supported with `AhvIntegrated: false` / reste pris en charge avec `AhvIntegrated: false`.
+
 ## [1.0.0] - 2026-09-15
 
 ### Added / Ajouté
