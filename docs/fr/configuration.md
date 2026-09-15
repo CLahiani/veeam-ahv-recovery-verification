@@ -15,9 +15,10 @@ La configuration est un fichier JSON, `.\RecoveryVerification.json` par défaut 
   "Veeam": {
     "VbrServer": "vbr.example.local",
     "VbrPort": 9419,
-    "VbrApiVersion": "1.2-rev0",
+    "VbrApiVersion": "1.3-rev1",
+    "AhvIntegrated": true,
     "AhvAppliance": "veeam-ahv.example.local",
-    "AhvApiVersion": "v8"
+    "AhvApiVersion": "v9"
   },
   "Nutanix": {
     "PrismCentral": "prism.example.local",
@@ -53,9 +54,10 @@ La configuration est un fichier JSON, `.\RecoveryVerification.json` par défaut 
 |---|---|---|---|
 | `VbrServer` | `-VbrServer` | Serveur Veeam Backup & Replication (FQDN ou IP). | `vbr.example.local` |
 | `VbrPort` | `-VbrPort` | Port de l'API REST VBR. | `9419` |
-| `VbrApiVersion` | — | Valeur de l'en-tête `x-api-version`. Doit correspondre à votre version de VBR (voir la référence API REST de votre version). | `1.2-rev0` |
-| `AhvAppliance` | `-AhvAppliance` | Appliance Veeam Plug-in for Nutanix AHV (FQDN ou IP, HTTPS 443). | `veeam-ahv.example.local` |
-| `AhvApiVersion` | `-AhvApiVersion` | Préfixe d'API de l'appliance : `v8`, `v9`… | `v8` |
+| `VbrApiVersion` | `-VbrApiVersion` | Valeur de l'en-tête `x-api-version`. **`1.3-rev1` pour VBR 13.x**, `1.2-rev0` pour 12.x. | `1.3-rev1` |
+| `AhvIntegrated` | `-AhvIntegrated` | **`true` = VBR 13.x** (plug-in intégré à VBR, architecture à workers, API du plug-in servie par le serveur VBR avec le jeton VBR). **`false` = appliance autonome VBR 12.x**. Voir [Installation](installation.md#veeam-13x-plug-in-intégré-vs-12x-appliance). | `true` |
+| `AhvAppliance` | `-AhvAppliance` | **12.x uniquement** (`AhvIntegrated: false`) : FQDN ou IP de l'appliance (HTTPS 443). Ignoré en 13.x. | `veeam-ahv.example.local` |
+| `AhvApiVersion` | `-AhvApiVersion` | Version de l'API REST du plug-in : **`v9` pour 13.x**, `v8` pour l'appliance 12.x. | `v9` |
 
 ## `Nutanix`
 
@@ -78,7 +80,7 @@ La configuration est un fichier JSON, `.\RecoveryVerification.json` par défaut 
 | Clé | Surcharge CLI | Description | Défaut |
 |---|---|---|---|
 | `MaxRestorePointAgeHours` | `-MaxRestorePointAgeHours` | **RPO cible.** CP11 est `KO` si le dernier point de restauration est plus ancien. Régler sur l'intervalle de sauvegarde plus une marge (job quotidien → 30 h). | `30` |
-| `MaxRestoreMinutes` | `-MaxRestoreMinutes` | **RTO cible.** CP13 est `WARN` si la session de restauration dure plus longtemps. | `45` |
+| `MaxRestoreMinutes` | `-MaxRestoreMinutes` | **RTO cible.** CP13 est `WARN` si la session de restauration dure plus longtemps. En 13.x, inclure le temps de démarrage du worker (quelques minutes s'il est éteint). | `45` |
 | `BootTimeoutMinutes` | `-BootTimeoutMinutes` | Attente maximale pour que la VM soit `ON` et remonte une IP via NGT (CP20–CP22). S'ajoute aussi à `MaxRestoreMinutes` comme délai maximal de la session de restauration. | `15` |
 | `PollIntervalSeconds` | — | Intervalle d'interrogation de l'état des sessions et des VM. | `20` |
 
