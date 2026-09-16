@@ -1,0 +1,649 @@
+{
+  "RunId": "20260919-050000",
+  "Date": "2026-09-19T06:18:30",
+  "Language": "fr",
+  "Platform": "NutanixAHV",
+  "Method": "FullRestoreToIsolatedSubnet",
+  "Version": "2.0.0",
+  "Target": {
+    "ClusterName": "CLUSTER-01",
+    "IsolatedNetworkName": "VLAN-RecoveryVerification",
+    "StorageContainerName": "default-container",
+    "VmNamePrefix": "RV-"
+  },
+  "Thresholds": {
+    "MaxRestorePointAgeHours": 30,
+    "MaxRestoreMinutes": 45,
+    "BootTimeoutMinutes": 15,
+    "PollIntervalSeconds": 20
+  },
+  "Summary": [
+    {
+      "VM": "SRV-AD01",
+      "RestorePointAgeH": 6.8,
+      "RestoreMinutes": 17.5,
+      "IP": "192.168.250.11",
+      "KO": 0,
+      "WARN": 0,
+      "Result": "OK"
+    },
+    {
+      "VM": "SRV-FILE01",
+      "RestorePointAgeH": 6.3,
+      "RestoreMinutes": 8.6,
+      "IP": "192.168.250.12",
+      "KO": 0,
+      "WARN": 0,
+      "Result": "OK"
+    },
+    {
+      "VM": "SRV-WEB01",
+      "RestorePointAgeH": 30.9,
+      "RestoreMinutes": 13.5,
+      "IP": "192.168.250.13",
+      "KO": 2,
+      "WARN": 0,
+      "Result": "KO"
+    },
+    {
+      "VM": "SRV-SQL01",
+      "RestorePointAgeH": 6.0,
+      "RestoreMinutes": 51.4,
+      "IP": "",
+      "KO": 0,
+      "WARN": 2,
+      "Result": "OK (avertissements)"
+    },
+    {
+      "VM": "SRV-OLD01",
+      "RestorePointAgeH": null,
+      "RestoreMinutes": null,
+      "IP": "",
+      "KO": 1,
+      "WARN": 0,
+      "Result": "KO"
+    }
+  ],
+  "Checkpoints": [
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:00:06",
+      "CP": "CP00",
+      "VM": "-",
+      "Label": "Authentification VBR / plug-in AHV / Prism Central",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "VBR 13.x integrated plug-in (v9)"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:00:09",
+      "CP": "CP01",
+      "VM": "-",
+      "Label": "Cluster, conteneur de stockage et sous-réseau isolé présents",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "CLUSTER-01 / default-container / VLAN-RecoveryVerification"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:00:12",
+      "CP": "CP02",
+      "VM": "-",
+      "Label": "Sous-réseau isolé non routé",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "is_external=false, aucune passerelle"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:00:15",
+      "CP": "CP03",
+      "VM": "-",
+      "Label": "Aucune VM hors périmètre sur le sous-réseau isolé",
+      "Status": "OK",
+      "Value": null,
+      "Detail": ""
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:00:18",
+      "CP": "CP04",
+      "VM": "-",
+      "Label": "Aucune VM de test résiduelle",
+      "Status": "OK",
+      "Value": null,
+      "Detail": ""
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:00:24",
+      "CP": "CP10",
+      "VM": "SRV-AD01",
+      "Label": "Point de restauration trouvé",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "créé le 2026-09-18T22:14:07Z"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:00:27",
+      "CP": "CP11",
+      "VM": "SRV-AD01",
+      "Label": "Âge du point de restauration <= 30 h",
+      "Status": "OK",
+      "Value": 6.8,
+      "Detail": "6.8 h"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:01:13",
+      "CP": "CP10",
+      "VM": "SRV-FILE01",
+      "Label": "Point de restauration trouvé",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "créé le 2026-09-18T22:41:52Z"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:01:16",
+      "CP": "CP11",
+      "VM": "SRV-FILE01",
+      "Label": "Âge du point de restauration <= 30 h",
+      "Status": "OK",
+      "Value": 6.3,
+      "Detail": "6.3 h"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:02:02",
+      "CP": "CP10",
+      "VM": "SRV-WEB01",
+      "Label": "Point de restauration trouvé",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "créé le 2026-09-17T22:10:33Z"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:02:05",
+      "CP": "CP11",
+      "VM": "SRV-WEB01",
+      "Label": "Âge du point de restauration <= 30 h",
+      "Status": "KO",
+      "Value": 30.9,
+      "Detail": "30.9 h - RPO non tenu, vérifier le job de sauvegarde"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:02:51",
+      "CP": "CP10",
+      "VM": "SRV-SQL01",
+      "Label": "Point de restauration trouvé",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "créé le 2026-09-18T23:05:18Z"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:02:54",
+      "CP": "CP11",
+      "VM": "SRV-SQL01",
+      "Label": "Âge du point de restauration <= 30 h",
+      "Status": "OK",
+      "Value": 6.0,
+      "Detail": "6.0 h"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:03:40",
+      "CP": "CP10",
+      "VM": "SRV-OLD01",
+      "Label": "Point de restauration trouvé",
+      "Status": "KO",
+      "Value": null,
+      "Detail": "aucun point de restauration Nutanix AHV pour ce nom"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:03:43",
+      "CP": "CP13",
+      "VM": "SRV-OLD01",
+      "Label": "Contrôle post-restauration",
+      "Status": "SKIP",
+      "Value": null,
+      "Detail": "pas de point de restauration"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:03:46",
+      "CP": "CP20",
+      "VM": "SRV-OLD01",
+      "Label": "Contrôle post-restauration",
+      "Status": "SKIP",
+      "Value": null,
+      "Detail": "pas de point de restauration"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:03:49",
+      "CP": "CP21",
+      "VM": "SRV-OLD01",
+      "Label": "Contrôle post-restauration",
+      "Status": "SKIP",
+      "Value": null,
+      "Detail": "pas de point de restauration"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:03:52",
+      "CP": "CP22",
+      "VM": "SRV-OLD01",
+      "Label": "Contrôle post-restauration",
+      "Status": "SKIP",
+      "Value": null,
+      "Detail": "pas de point de restauration"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:03:55",
+      "CP": "CP23",
+      "VM": "SRV-OLD01",
+      "Label": "Contrôle post-restauration",
+      "Status": "SKIP",
+      "Value": null,
+      "Detail": "pas de point de restauration"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:03:58",
+      "CP": "CP30",
+      "VM": "SRV-OLD01",
+      "Label": "Contrôle post-restauration",
+      "Status": "SKIP",
+      "Value": null,
+      "Detail": "pas de point de restauration"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:04:01",
+      "CP": "CP40",
+      "VM": "SRV-OLD01",
+      "Label": "Contrôle post-restauration",
+      "Status": "SKIP",
+      "Value": null,
+      "Detail": "pas de point de restauration"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:55:06",
+      "CP": "CP12",
+      "VM": "SRV-AD01",
+      "Label": "Session de restauration terminée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "Success"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:55:09",
+      "CP": "CP13",
+      "VM": "SRV-AD01",
+      "Label": "Durée de restauration <= 45 min",
+      "Status": "OK",
+      "Value": 17.5,
+      "Detail": "17.5 min"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:56:21",
+      "CP": "CP20",
+      "VM": "SRV-AD01",
+      "Label": "VM démarrée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "power_state = ON"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:56:24",
+      "CP": "CP21",
+      "VM": "SRV-AD01",
+      "Label": "Cartes réseau sur le sous-réseau isolé uniquement",
+      "Status": "OK",
+      "Value": null,
+      "Detail": ""
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:56:27",
+      "CP": "CP22",
+      "VM": "SRV-AD01",
+      "Label": "Adresse IP remontée (Nutanix Guest Tools)",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "192.168.250.11"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:56:30",
+      "CP": "CP23",
+      "VM": "SRV-AD01",
+      "Label": "Ping depuis la sonde",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "192.168.250.11"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:56:33",
+      "CP": "CP30",
+      "VM": "SRV-AD01",
+      "Label": "Applicatif : RDP (Windows)",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "tcp/3389"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:56:36",
+      "CP": "CP30",
+      "VM": "SRV-AD01",
+      "Label": "Applicatif : LDAP",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "anonymous RootDSE bind OK"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:56:39",
+      "CP": "CP30",
+      "VM": "SRV-AD01",
+      "Label": "Applicatif : Zone DNS",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "example.local -> 192.168.250.11"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:56:42",
+      "CP": "CP30",
+      "VM": "SRV-AD01",
+      "Label": "Applicatif : Kerberos",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "tcp/88"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:57:25",
+      "CP": "CP40",
+      "VM": "SRV-AD01",
+      "Label": "VM de test supprimée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "RV-SRV-AD01"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:57:28",
+      "CP": "CP12",
+      "VM": "SRV-FILE01",
+      "Label": "Session de restauration terminée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "Success"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:57:31",
+      "CP": "CP13",
+      "VM": "SRV-FILE01",
+      "Label": "Durée de restauration <= 45 min",
+      "Status": "OK",
+      "Value": 8.6,
+      "Detail": "8.6 min"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:58:43",
+      "CP": "CP20",
+      "VM": "SRV-FILE01",
+      "Label": "VM démarrée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "power_state = ON"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:58:46",
+      "CP": "CP21",
+      "VM": "SRV-FILE01",
+      "Label": "Cartes réseau sur le sous-réseau isolé uniquement",
+      "Status": "OK",
+      "Value": null,
+      "Detail": ""
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:58:49",
+      "CP": "CP22",
+      "VM": "SRV-FILE01",
+      "Label": "Adresse IP remontée (Nutanix Guest Tools)",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "192.168.250.12"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:58:52",
+      "CP": "CP23",
+      "VM": "SRV-FILE01",
+      "Label": "Ping depuis la sonde",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "192.168.250.12"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:58:55",
+      "CP": "CP30",
+      "VM": "SRV-FILE01",
+      "Label": "Applicatif : RDP (Windows)",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "tcp/3389"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:58:58",
+      "CP": "CP30",
+      "VM": "SRV-FILE01",
+      "Label": "Applicatif : SMB",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "tcp/445"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:59:41",
+      "CP": "CP40",
+      "VM": "SRV-FILE01",
+      "Label": "VM de test supprimée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "RV-SRV-FILE01"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:59:44",
+      "CP": "CP12",
+      "VM": "SRV-WEB01",
+      "Label": "Session de restauration terminée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "Success"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T05:59:47",
+      "CP": "CP13",
+      "VM": "SRV-WEB01",
+      "Label": "Durée de restauration <= 45 min",
+      "Status": "OK",
+      "Value": 13.5,
+      "Detail": "13.5 min"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:00:59",
+      "CP": "CP20",
+      "VM": "SRV-WEB01",
+      "Label": "VM démarrée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "power_state = ON"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:01:02",
+      "CP": "CP21",
+      "VM": "SRV-WEB01",
+      "Label": "Cartes réseau sur le sous-réseau isolé uniquement",
+      "Status": "OK",
+      "Value": null,
+      "Detail": ""
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:01:05",
+      "CP": "CP22",
+      "VM": "SRV-WEB01",
+      "Label": "Adresse IP remontée (Nutanix Guest Tools)",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "192.168.250.13"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:01:08",
+      "CP": "CP23",
+      "VM": "SRV-WEB01",
+      "Label": "Ping depuis la sonde",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "192.168.250.13"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:01:11",
+      "CP": "CP30",
+      "VM": "SRV-WEB01",
+      "Label": "Applicatif : RDP (Windows)",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "tcp/3389"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:01:14",
+      "CP": "CP30",
+      "VM": "SRV-WEB01",
+      "Label": "Applicatif : Health endpoint",
+      "Status": "KO",
+      "Value": null,
+      "Detail": "HTTP 503 https://192.168.250.13/health"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:01:57",
+      "CP": "CP40",
+      "VM": "SRV-WEB01",
+      "Label": "VM de test supprimée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "RV-SRV-WEB01"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:02:00",
+      "CP": "CP12",
+      "VM": "SRV-SQL01",
+      "Label": "Session de restauration terminée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "Success"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:02:03",
+      "CP": "CP13",
+      "VM": "SRV-SQL01",
+      "Label": "Durée de restauration <= 45 min",
+      "Status": "WARN",
+      "Value": 51.4,
+      "Detail": "51.4 min - RTO cible dépassé"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:17:29",
+      "CP": "CP20",
+      "VM": "SRV-SQL01",
+      "Label": "VM démarrée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "power_state = ON"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:17:32",
+      "CP": "CP21",
+      "VM": "SRV-SQL01",
+      "Label": "Cartes réseau sur le sous-réseau isolé uniquement",
+      "Status": "OK",
+      "Value": null,
+      "Detail": ""
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:17:35",
+      "CP": "CP22",
+      "VM": "SRV-SQL01",
+      "Label": "Adresse IP remontée (Nutanix Guest Tools)",
+      "Status": "WARN",
+      "Value": null,
+      "Detail": "aucune IP - NGT absent, pas de DHCP sur le sous-réseau isolé ou OS non démarré"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:17:38",
+      "CP": "CP23",
+      "VM": "SRV-SQL01",
+      "Label": "Ping depuis la sonde",
+      "Status": "SKIP",
+      "Value": null,
+      "Detail": "pas d'adresse IP"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:17:41",
+      "CP": "CP30",
+      "VM": "SRV-SQL01",
+      "Label": "Contrôles applicatifs",
+      "Status": "SKIP",
+      "Value": null,
+      "Detail": "pas d'adresse IP"
+    },
+    {
+      "RunId": "20260919-050000",
+      "Time": "2026-09-19T06:18:24",
+      "CP": "CP40",
+      "VM": "SRV-SQL01",
+      "Label": "VM de test supprimée",
+      "Status": "OK",
+      "Value": null,
+      "Detail": "RV-SRV-SQL01"
+    }
+  ]
+}
