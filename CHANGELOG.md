@@ -4,6 +4,15 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 Toutes les évolutions notables de ce projet sont consignées ici. Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [2.0.0] - 2026-09-16
+
+### Changed / Modifié
+- **EN** Rewritten in **Python 3** (`ahv_backup_restore.py`, standard library only) for any Linux or Windows probe. Same checkpoints CP00–CP40, same HTML / CSV / JSON reports, same exit codes, same dual mode (`Veeam.AhvIntegrated` 13.x / 12.x). Secrets via `--secrets-file` (chmod 600), environment variables (`VBR_*`, `PRISM_*`, `AHV_*`) or prompt — never in the JSON. CLI: `-v/--vm`, `--cleanup`, `--dry-run`, `--ping-check`, `--fail-on-warning`, `-l en|fr`, `--verify-tls`, `--debug`, `--init-config`, `--ahv-integrated true|false`. Ldap / Dns / Sql checks use optional `ldap3` / `dnspython` / `pymssql` (SQL login instead of Windows integrated auth). `deploy/` adds a systemd service + timer, a daily rotation helper and a Windows scheduled-task registration script.
+- **FR** Réécriture en **Python 3** (`ahv_backup_restore.py`, bibliothèque standard uniquement) pour toute sonde Linux ou Windows. Mêmes points de contrôle CP00–CP40, mêmes rapports HTML / CSV / JSON, mêmes codes de sortie, même double mode (`Veeam.AhvIntegrated` 13.x / 12.x). Secrets via `--secrets-file` (chmod 600), variables d'environnement (`VBR_*`, `PRISM_*`, `AHV_*`) ou saisie — jamais dans le JSON. CLI : `-v/--vm`, `--cleanup`, `--dry-run`, `--ping-check`, `--fail-on-warning`, `-l en|fr`, `--verify-tls`, `--debug`, `--init-config`, `--ahv-integrated true|false`. Les contrôles Ldap / Dns / Sql utilisent `ldap3` / `dnspython` / `pymssql` optionnels (login SQL au lieu de l'authentification intégrée Windows). `deploy/` ajoute un service + timer systemd, un script de rotation quotidienne et un script d'enregistrement de tâche planifiée Windows.
+
+### Deprecated / Déprécié
+- **EN/FR** The PowerShell script moves to `legacy/` and is no longer maintained. / Le script PowerShell passe dans `legacy/` et n'est plus maintenu.
+
 ## [1.1.1] - 2026-09-16
 
 ### Fixed / Corrigé

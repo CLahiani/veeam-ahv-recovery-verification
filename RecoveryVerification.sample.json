@@ -25,21 +25,53 @@
   },
   "AppChecks": {
     "*": [
-      { "Type": "Tcp", "Port": 3389, "Label": "RDP (Windows)" }
+      {
+        "Type": "Tcp",
+        "Port": 3389,
+        "Label": "RDP (Windows)"
+      }
     ],
     "SRV-AD01": [
-      { "Type": "Ldap", "Port": 389, "Label": "LDAP" },
-      { "Type": "Dns", "Name": "example.local", "Label": "Zone DNS" },
-      { "Type": "Tcp", "Port": 88, "Label": "Kerberos" }
+      {
+        "Type": "Ldap",
+        "Port": 389,
+        "Label": "LDAP"
+      },
+      {
+        "Type": "Dns",
+        "Name": "example.local",
+        "Label": "Zone DNS"
+      },
+      {
+        "Type": "Tcp",
+        "Port": 88,
+        "Label": "Kerberos"
+      }
     ],
     "SRV-FILE01": [
-      { "Type": "Tcp", "Port": 445, "Label": "SMB" }
+      {
+        "Type": "Tcp",
+        "Port": 445,
+        "Label": "SMB"
+      }
     ],
     "SRV-WEB01": [
-      { "Type": "Http", "Url": "https://{ip}/health", "ExpectedStatus": 200, "Label": "Health endpoint" }
+      {
+        "Type": "Http",
+        "Url": "https://{ip}/health",
+        "ExpectedStatus": 200,
+        "Label": "Health endpoint"
+      }
     ],
     "SRV-SQL01": [
-      { "Type": "Sql", "Port": 1433, "Query": "SELECT COUNT(*) FROM sys.databases WHERE state_desc='ONLINE'", "Label": "Bases ONLINE" }
+      {
+        "Type": "Sql",
+        "Port": 1433,
+        "Query": "SELECT COUNT(*) FROM sys.databases WHERE state_desc='ONLINE'",
+        "User": "rv_check",
+        "Password": "",
+        "Label": "Bases ONLINE"
+      }
     ]
   }
 }
