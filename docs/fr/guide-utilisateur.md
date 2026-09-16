@@ -5,164 +5,105 @@
 ## Déroulement d'une exécution
 
 ```
-Étape 0  PRÉ-VOL        Authentification VBR (+ API du plug-in AHV), Prism Central.
-                        Contrôle cluster / conteneur / sous-réseau, isolement du
-                        sous-réseau, absence de VM étrangère et de VM résiduelle. → CP00–CP04
-Étape 1  RESTAURATION   Par VM : dernier point de restauration, contrôle RPO,
-                        restauration complète vers "<préfixe><vm>" avec toutes les
-                        cartes réseau remappées sur le sous-réseau isolé, démarrage. → CP10–CP12
-Étape 2  VÉRIFICATION   Attente de la session (RTO), état de la VM dans Prism, garde-fou
-                        réseau, attente de l'IP (NGT), ping, contrôles applicatifs. → CP13–CP30
-Étape 3  NETTOYAGE      Arrêt et suppression de la VM de test (-Cleanup).        → CP40
+Étape 0  PRÉ-VOL        Authentification VBR (+ API du plug-in AHV), Prism Central. Cluster / conteneur /
+                        sous-réseau présents, sous-réseau isolé, aucune VM étrangère, aucune VM résiduelle. → CP00–CP04
+Étape 1  RESTAURATION   Par VM : dernier point de restauration, contrôle RPO, restauration complète vers
+                        "<préfixe><vm>" avec toutes les NIC remappées sur le sous-réseau isolé, démarrage. → CP10–CP12
+Étape 2  VÉRIFICATION   Attente de la session (RTO), état de la VM dans Prism, garde-fou NIC, IP NGT, ping,
+                        contrôles applicatifs depuis la sonde.                                       → CP13–CP30
+Étape 3  NETTOYAGE      Arrêt et suppression de la VM de test (--cleanup).                           → CP40
 Étape 4  RAPPORT        HTML + CSV + JSON + journal, code de sortie.
 ```
 
-Les restaurations sont lancées pour toutes les VM d'abord (étape 1), puis vérifiées une par une (étape 2) : plusieurs restaurations tournent donc en parallèle sur l'appliance.
+Les restaurations sont lancées pour toutes les VM d'abord (étape 1), puis vérifiées une par une (étape 2) : plusieurs restaurations tournent en parallèle sur le plug-in.
 
 ## Ligne de commande
 
-```powershell
-.\Test-AhvBackupRestore.ps1 [-VmNames] <string[]>
-    [-ConfigPath <string>] [-Language en|fr]
-    [-PingCheck] [-Cleanup] [-FailOnWarning] [-ReportDir <string>]
-    [-VbrCredential <PSCredential>] [-AhvCredential <PSCredential>] [-PrismCredential <PSCredential>]
-    [<surcharges de configuration>] [-WhatIf] [-Verbose]
-
-.\Test-AhvBackupRestore.ps1 -InitConfig [-ConfigPath <string>]
+```
+ahv_backup_restore.py -v NOM [-v NOM ...] [-c CONFIG] [-l en|fr] [--cleanup] [--ping-check] [--fail-on-warning]
+                      [--report-dir DIR] [--secrets-file FICHIER] [--verify-tls] [-n|--dry-run] [--debug]
+                      [surcharges de configuration]
+ahv_backup_restore.py --init-config [--force] [-c CONFIG]
 ```
 
-### Paramètres principaux
-
-| Paramètre | Description | Défaut |
+| Option | Description | Défaut |
 |---|---|---|
-| `-VmNames` | Un ou plusieurs **noms de VM sources, exactement tels qu'affichés dans Veeam**. Position 0 : le nom du paramètre peut être omis. | — (obligatoire) |
-| `-ConfigPath` | Fichier de configuration JSON. Les paramètres de ligne de commande ont priorité sur le fichier. | `.\RecoveryVerification.json` |
-| `-InitConfig` | Écrit un modèle de configuration dans `-ConfigPath` puis s'arrête. Demande confirmation avant écrasement. | — |
-| `-Language` | `en` ou `fr` pour la console et les rapports. | Culture système : `fr-*` → `fr`, sinon `en` |
-| `-PingCheck` | Active **CP23** (ping de la VM restaurée depuis cette machine). Nécessite que la sonde soit sur le sous-réseau isolé. | désactivé |
-| `-Cleanup` | **Supprime les VM de test** à la fin, ainsi que toute VM `RV-*` résiduelle d'une exécution précédente lors du pré-vol. Sans cette option, les VM sont conservées pour analyse et CP40 est `SKIP`. | désactivé |
-| `-FailOnWarning` | Compte les points de contrôle `WARN` comme des échecs pour le code de sortie et le résultat par VM. | désactivé |
-| `-ReportDir` | Dossier de sortie HTML / CSV / JSON / journal. Créé s'il n'existe pas. | `.\Reports` |
-| `-WhatIf` | Affiche les actions de restauration et de suppression sans les exécuter. Le pré-vol s'exécute quand même. | — |
+| `-v`, `--vm NOM` | Nom de la VM source **exactement tel qu'affiché dans Veeam**. Répéter pour plusieurs VM. | obligatoire |
+| `-c`, `--config` | Fichier de configuration JSON. | `./RecoveryVerification.json` |
+| `--init-config` / `--force` | Écrit le modèle de configuration (écrase avec `--force`) puis s'arrête. | — |
+| `-l`, `--language` | `en` ou `fr` pour la console et les rapports. | locale système |
+| `--ping-check` | Active CP23 (ping depuis la sonde ; NIC sur le sous-réseau isolé requise). | désactivé |
+| `--cleanup` | **Supprime les VM de test** à la fin, et les VM `<préfixe>*` résiduelles en pré-vol. Sans cette option les VM sont conservées et CP40 est `SKIP`. | désactivé |
+| `--fail-on-warning` | Compte les `WARN` comme échecs pour le code de sortie. | désactivé |
+| `--report-dir` | Dossier de sortie des rapports et du journal. | `./Reports` |
+| `--secrets-file` | JSON avec `VBR_USER`, `VBR_PASSWORD`, `PRISM_USER`, `PRISM_PASSWORD` (+ `AHV_USER`, `AHV_PASSWORD` en 12.x). Variables d'environnement puis saisie en secours. | — |
+| `--verify-tls` | Valide les certificats. | désactivé |
+| `-n`, `--dry-run` | Le pré-vol s'exécute réellement ; restauration / suppression seulement affichées. | — |
+| `--debug` | Affiche aussi le journal de debug (appels REST) sur la console. | — |
 
-### Surcharges de configuration
-
-Toute valeur du fichier JSON (sauf `AppChecks`) peut être surchargée pour une exécution : `-VbrServer`, `-VbrPort`, `-VbrApiVersion`, `-AhvIntegrated`, `-AhvAppliance`, `-AhvApiVersion`, `-PrismCentral`, `-PrismPort`, `-TargetClusterName`, `-IsolatedNetworkName`, `-StorageContainerName`, `-VmNamePrefix`, `-MaxRestorePointAgeHours`, `-MaxRestoreMinutes`, `-BootTimeoutMinutes`. Voir [Configuration](configuration.md).
+Surcharges de configuration : `--vbr-server --vbr-port --vbr-api-version --ahv-integrated true|false --ahv-appliance --ahv-api-version --prism-central --prism-port --cluster-name --isolated-network-name --storage-container-name --vm-name-prefix --max-restore-point-age-hours --max-restore-minutes --boot-timeout-minutes`.
 
 ## Scénarios types
 
-### Première exécution — valider la mise en place
+```bash
+# première exécution - valider la mise en place (CP00-CP04), rien n'est restauré ; le détail de CP00 indique le mode (13.x intégré / 12.x appliance)
+./ahv_backup_restore.py -v SRV-FILE01 --secrets-file ~/.veeam-rv-secrets.json --dry-run --debug
 
-```powershell
-.\Test-AhvBackupRestore.ps1 -VmNames SRV-FILE01 -WhatIf -Verbose
+# ancien mode VBR 12.x avec appliance autonome
+./ahv_backup_restore.py -v SRV-A --cleanup --ahv-integrated false --ahv-appliance veeam-ahv.local --ahv-api-version v8 --vbr-api-version 1.2-rev0
+
+# restaurer deux VM et les conserver pour inspection (console Prism) - la prochaine exécution doit utiliser --cleanup, sinon CP04 bloque
+./ahv_backup_restore.py -v SRV-AD01 -v SRV-FILE01 --ping-check --secrets-file ~/.veeam-rv-secrets.json
+
+# vérification complète automatisée
+./ahv_backup_restore.py -v SRV-AD01 -v SRV-FILE01 -v SRV-SQL01 --ping-check --cleanup --fail-on-warning --secrets-file ~/.veeam-rv-secrets.json
+echo $?      # 0 OK, 1 point de contrôle en échec, 2 pré-vol / fatal
+
+# rotation quotidienne de 3 VM depuis vms.txt : deploy/rotate-sample.sh + timer systemd (Linux) ou deploy/windows-scheduled-task.ps1
 ```
-
-S'authentifie sur VBR et Prism (plus l'appliance en 12.x) et exécute CP00–CP04. Rien n'est restauré. Corriger tout `KO` avant d'aller plus loin. Le détail de CP00 indique le mode utilisé (`VBR 13.x integrated plug-in (v9)` ou `12.x appliance …`).
-
-### Ancien mode VBR 12.x avec appliance autonome
-
-```powershell
-.\Test-AhvBackupRestore.ps1 -VmNames SRV-A -Cleanup -AhvIntegrated:$false -AhvAppliance veeam-ahv.local -AhvApiVersion v8 -VbrApiVersion 1.2-rev0
-```
-
-Ou régler `Veeam.AhvIntegrated: false` (avec `AhvAppliance`, `AhvApiVersion: "v8"`, `VbrApiVersion: "1.2-rev0"`) dans le fichier JSON. Un troisième identifiant (appliance) est alors demandé.
-
-### Vérifier deux VM et les conserver pour inspection manuelle
-
-```powershell
-.\Test-AhvBackupRestore.ps1 -VmNames SRV-AD01,SRV-FILE01 -PingCheck
-```
-
-Les VM de test `RV-SRV-AD01` et `RV-SRV-FILE01` restent allumées dans le sous-réseau isolé. S'y connecter via la console Prism. **La prochaine exécution doit utiliser `-Cleanup`** ou les supprimer manuellement, sinon CP04 bloque.
-
-### Vérification complète automatisée
-
-```powershell
-.\Test-AhvBackupRestore.ps1 -VmNames SRV-AD01,SRV-FILE01,SRV-SQL01 -PingCheck -Cleanup -FailOnWarning
-if ($LASTEXITCODE -ne 0) { <# alerte #> }
-```
-
-### Rotation quotidienne sur tout le parc
-
-```powershell
-$all    = Get-Content .\vms.txt              # un nom de VM par ligne
-$d      = (Get-Date).DayOfYear
-$sample = 0..2 | ForEach-Object { $all[($d * 3 + $_) % $all.Count] }
-.\Test-AhvBackupRestore.ps1 -VmNames $sample -Cleanup
-```
-
-Trois VM différentes par jour ; la liste complète est couverte en `ceil(N/3)` jours.
-
-### Tâche planifiée (Windows)
-
-```powershell
-$action  = New-ScheduledTaskAction -Execute 'pwsh.exe' -Argument '-NoProfile -File C:\Tools\RecoveryVerification\Run.ps1'
-$trigger = New-ScheduledTaskTrigger -Daily -At 06:00
-Register-ScheduledTask -TaskName 'Veeam Recovery Verification AHV' -Action $action -Trigger $trigger -User 'DOMAINE\svc-rv' -Password '***'
-```
-
-Où `Run.ps1` récupère les identifiants depuis un coffre (voir [Installation §4](installation.md#4-comptes)) et appelle le script avec `-Cleanup`.
 
 ## Lire les résultats
 
-### Console
-
-Chaque point de contrôle affiche une ligne :
-
 ```
+  [CP00] OK   -                Authentification VBR / plug-in AHV / Prism Central - plug-in intégré VBR 13.x (v9)
   [CP11] OK   SRV-AD01         Âge du point de restauration <= 30 h - 9.4 h
   [CP13] WARN SRV-AD01         Durée de restauration <= 45 min - 51.2 min - RTO cible dépassé
   [CP30] KO   SRV-WEB01        Applicatif : Health - HTTP 503 https://10.99.0.12/health
-  [CP23] SKIP SRV-FILE01       Ping depuis la sonde - option -PingCheck non activée
 ```
 
-Couleurs : vert `OK`, rouge `KO`, jaune `WARN`, gris `SKIP`. Un tableau de synthèse par VM est affiché à la fin, suivi des chemins des quatre fichiers produits.
-
-### Fichiers dans `-ReportDir`
-
-| Fichier | Contenu |
+| Fichier dans `--report-dir` | Contenu |
 |---|---|
-| `RecoveryVerification-<RunId>.html` | Bandeau (SUCCÈS / SUCCÈS AVEC AVERTISSEMENTS / ÉCHEC), indicateurs, synthèse par VM, tableau complet des points de contrôle. Autonome, à partager tel quel. |
-| `RecoveryVerification-<RunId>.csv` | Une ligne par point de contrôle, séparateur `;`, UTF-8. Pour Excel / Power BI. |
-| `RecoveryVerification-<RunId>.json` | RunId, date, langue, cible, seuils, synthèse, points de contrôle. Pour ingestion SIEM / supervision. |
-| `RecoveryVerification-<RunId>.log` | Transcription PowerShell complète (`-Verbose` pour les URL d'API). |
+| `RecoveryVerification-<RunId>.html` | Bandeau, indicateurs, synthèse par VM, tableau des points de contrôle. Autonome. |
+| `RecoveryVerification-<RunId>.csv` | Une ligne par point de contrôle, séparateur `;`, UTF-8. |
+| `RecoveryVerification-<RunId>.json` | RunId, `Platform: NutanixAHV`, `Method: FullRestoreToIsolatedSubnet`, cible, seuils, synthèse, points de contrôle. |
+| `RecoveryVerification-<RunId>.log` | Journal de debug : appels REST, traces. |
 
-`RunId` est au format `yyyyMMdd-HHmmss`.
-
-### Codes de sortie
-
-| Code | Signification |
-|---|---|
-| `0` | Tous les points de contrôle OK (ou seulement des WARN sans `-FailOnWarning`). |
-| `1` | Au moins un point de contrôle `KO` (ou `WARN` avec `-FailOnWarning`). |
-| `2` | Erreur bloquante en pré-vol (authentification, objet manquant, sous-réseau routé, VM résiduelles sans `-Cleanup`) ou erreur fatale inattendue. Les rapports sont quand même produits. |
+Codes de sortie : `0` tout OK · `1` au moins un `KO` (ou `WARN` avec `--fail-on-warning`) · `2` erreur bloquante en pré-vol ou fatale (rapports quand même produits).
 
 ## Garde-fous de sécurité
 
-- **CP02 (bloquant)** — le sous-réseau cible ne doit pas être externe et ne doit pas avoir de passerelle. Sinon, rien n'est restauré.
-- **CP03** — toute VM du sous-réseau isolé qui ne commence pas par le préfixe de test est signalée (quelqu'un d'autre utilise le réseau de test).
-- **CP04 (bloquant)** — les VM de test résiduelles d'une exécution précédente sont supprimées avec `-Cleanup`, sinon l'exécution s'arrête.
-- **CP21 (garde-fou)** — si une VM restaurée se retrouve avec une carte réseau hors du sous-réseau isolé, elle est **arrêtée immédiatement**.
-- **La restauration ne cible jamais la VM d'origine** (`restoreToOriginal = false`), la VM de test porte un nom distinct (`<préfixe><vm>`) et les catégories ne sont pas restaurées.
-- Chaque appel d'API bénéficie de 3 tentatives sur erreur réseau / 5xx / 429 et produit un message lisible avec code HTTP et indice (401 identifiants, 403 droits, 404 objet / version d'API).
+- **CP02 (bloquant)** — le sous-réseau cible ne doit être ni externe ni doté d'une passerelle.
+- **CP03** — toute VM hors test sur le sous-réseau isolé est signalée.
+- **CP04 (bloquant)** — les VM de test résiduelles sont supprimées avec `--cleanup`, sinon l'exécution s'arrête.
+- **CP21 (garde-fou)** — une VM restaurée avec une NIC hors du sous-réseau isolé est **arrêtée immédiatement**.
+- La restauration ne cible jamais la VM d'origine (`restoreToOriginal = false`), la VM de test porte un nom distinct, les catégories ne sont pas restaurées.
+- Les appels REST réessaient 3× sur erreur réseau / 5xx / 429 et produisent des messages lisibles (401 identifiants, 403 droits, 404 objet / version d'API).
 
 ## Dépannage
 
 | Symptôme | Cause probable / correction |
 |---|---|
-| CP00 KO `HTTP 401` | Identifiants incorrects, ou en-tête de version d'API VBR refusé → `Veeam.VbrApiVersion` = `1.3-rev2` (13.1) / `1.2-rev0` (12.x). |
-| CP00 KO `HTTP 404` sur `/extension/…/api/v9/clusters` | Mode 13.x contre un serveur 12.x, ou plug-in AHV non installé sur le serveur VBR → vérifier `AhvIntegrated`, ou installer le plug-in (Backup Infrastructure → Add Server → Nutanix AHV). |
-| CP00 KO connexion refusée sur l'appliance | `AhvIntegrated: false` contre un environnement 13.x où l'appliance n'existe plus → passer `AhvIntegrated: true`, `AhvApiVersion: v9`. |
-| CP01 KO `sous-réseau '…' introuvable` | Réseau créé dans Prism mais inventaire du plug-in non rafraîchi → relancer un rescan du serveur Nutanix dans VBR (13.x) ou dans l'appliance (12.x). |
-| CP12 KO / CP13 WARN, restauration lente à démarrer (13.x) | Worker éteint ou en mise à jour au début de la session ; aucun worker sur le cluster cible (VBR en emprunte un à un autre cluster). Ajouter un worker par cluster, désactiver la vérification de mise à jour du worker, augmenter `MaxRestoreMinutes`. |
-| CP02 KO `is_external=True` ou `passerelle=…` | Le sous-réseau est routé. Le recréer en simple VLAN non routé sans passerelle. |
-| CP04 KO `VM résiduelle(s)` | Exécution précédente sans `-Cleanup`. Relancer avec `-Cleanup` ou supprimer les VM `RV-*` dans Prism. |
-| CP10 KO `aucun point de restauration Nutanix AHV` | Le nom doit correspondre exactement à Veeam (insensible à la casse, sans caractère générique). Vérifier que la VM est dans un job de sauvegarde AHV avec au moins un point de restauration. |
-| CP12 KO `statut = Failed` | Ouvrir la session dans la console Veeam ; causes fréquentes : conteneur plein, conflit de nom, appliance déconnectée du cluster. |
-| CP22 WARN `aucune IP` | Nutanix Guest Tools non installés / non démarrés dans l'invité, ou OS encore en démarrage → augmenter `BootTimeoutMinutes`. |
-| CP23 / CP30 SKIP | `-PingCheck` non activé, ou pas d'IP, ou aucune entrée `AppChecks` pour cette VM. La sonde doit être sur le sous-réseau isolé. |
-| CP30 SKIP `SqlServer module missing` | `Install-Module SqlServer`. |
-| CP40 KO `supprimer manuellement '…'` | Prism a refusé la suppression (droits, ou VM encore en cours d'arrêt). La supprimer dans Prism. |
-| `HTTP 404` sur les appels du plug-in | Mauvais `Veeam.AhvApiVersion` (`v9` pour 13.x, `v8` pour l'appliance 12.x). |
-
-Les lignes marquées `# [API]` dans le script sont celles qui risquent le plus de nécessiter un ajustement si une mise à jour Veeam ou Nutanix modifie le nom d'un champ de réponse.
+| CP00 KO `HTTP 401` | Identifiants incorrects, ou `VbrApiVersion` refusé (`1.3-rev2` 13.1 / `1.2-rev0` 12.x). |
+| CP00 KO `HTTP 404` sur `/extension/…/api/v9/clusters` | Mode 13.x contre un serveur 12.x, ou plug-in AHV non installé sur VBR → vérifier `AhvIntegrated`, installer le plug-in. |
+| CP00 KO connexion refusée sur l'appliance | `AhvIntegrated: false` contre un environnement 13.x (appliance disparue) → `AhvIntegrated: true`, `AhvApiVersion: v9`. |
+| CP01 KO `sous-réseau '…' introuvable` | Réseau créé dans Prism mais inventaire du plug-in non rafraîchi → rescan du serveur Nutanix dans VBR (13.x) / appliance (12.x). |
+| CP02 KO `is_external=True` ou `passerelle=…` | Sous-réseau routé. Le recréer en simple VLAN non routé sans passerelle. |
+| CP04 KO `VM résiduelle(s)` | Exécution précédente sans `--cleanup`. Relancer avec `--cleanup` ou supprimer les VM `<préfixe>*` dans Prism. |
+| CP10 KO `aucun point de restauration Nutanix AHV` | Nom Veeam exact requis ; la VM doit être dans un job AHV avec un point de restauration. |
+| CP12 KO `statut = Failed` | Ouvrir la session dans la console Veeam : conteneur plein, conflit de nom, worker / appliance déconnecté. |
+| CP12 KO / CP13 WARN, démarrage lent (13.x) | Worker éteint ou en mise à jour ; aucun worker sur le cluster cible. Ajouter un worker par cluster, désactiver la vérification de mise à jour, augmenter `MaxRestoreMinutes`. |
+| CP22 WARN `aucune IP` | NGT non installés / non démarrés, ou OS en démarrage → augmenter `BootTimeoutMinutes`. |
+| CP23 / CP30 SKIP | `--ping-check` désactivé, pas d'IP, aucune entrée `AppChecks`, ou sonde hors du sous-réseau isolé. |
+| CP30 SKIP `module python … absent` | `pip install dnspython ldap3 pymssql` (ou `-r requirements.txt`). |
+| CP40 KO | Prism a refusé la suppression (droits, VM encore en arrêt). La supprimer dans Prism. |
+| `HTTP 404` sur les appels du plug-in | Mauvais `AhvApiVersion` (`v9` 13.x / `v8` 12.x). |

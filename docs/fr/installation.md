@@ -6,99 +6,86 @@
 
 | Composant | Exigence |
 |---|---|
-| PowerShell | **7.2 ou supérieur** (`pwsh`). Windows PowerShell 5.1 n'est pas pris en charge (`SkipCertificateCheck`, opérateur ternaire, `ConvertFrom-Json -AsHashtable`). |
-| OS de la machine sonde | Windows recommandé. `Test-NetConnection` et `Resolve-DnsName` (utilisés par les contrôles Tcp / Ldap / Dns) sont des cmdlets Windows. Sous Linux, seuls les contrôles Http et Sql fonctionnent. |
-| Module `SqlServer` | Uniquement si des contrôles applicatifs `Sql` sont définis : `Install-Module SqlServer -Scope CurrentUser` |
+| Machine sonde | Tout hôte **Linux ou Windows** avec **Python 3.9+**. Bibliothèque standard uniquement pour le cœur ; `dnspython` / `ldap3` / `pymssql` optionnels pour les contrôles Ldap / Dns / Sql (`pip install -r requirements.txt`). Une petite VM Linux est le choix naturel. |
 | Veeam Backup & Replication | API REST activée (port **9419** par défaut). `Veeam.VbrApiVersion` = `1.3-rev2` pour VBR 13.1 (`1.3-rev1` pour 13.0), `1.2-rev0` pour 12.x. |
 | Veeam Plug-in for Nutanix AHV | Voir [Veeam 13.x vs 12.x](#veeam-13x-plug-in-intégré-vs-12x-appliance) ci-dessous. |
 | Nutanix Prism Central | API v3 (port **9440** par défaut). |
+| VM sources | **Nutanix Guest Tools** installés — l'IP est relue depuis NGT (CP22) ; CP23 / CP30 en dépendent. |
 
 ## Veeam 13.x (plug-in intégré) vs 12.x (appliance)
 
-La façon dont le script dialogue avec le plug-in AHV dépend de votre version de Veeam. Régler `Veeam.AhvIntegrated` en conséquence (défaut `true`).
+La façon dont l'outil dialogue avec le plug-in AHV dépend de votre version de Veeam. Régler `Veeam.AhvIntegrated` en conséquence (défaut `true`).
 
 | | **VBR 13.x** — `AhvIntegrated: true` | **VBR 12.x** — `AhvIntegrated: false` |
 |---|---|---|
-| Architecture | Plug-in intégré à VBR ; des **workers** (VM Linux légères déployées sur le cluster AHV par VBR) assurent le transfert de données. Plus d'appliance autonome. | Appliance autonome Veeam Plug-in for Nutanix AHV (VM proxy). |
+| Architecture | Plug-in intégré à VBR ; des **workers** (VM Linux légères déployées sur le cluster AHV par VBR) assurent le transfert. Plus d'appliance autonome. | Appliance autonome Veeam Plug-in for Nutanix AHV (VM proxy). |
 | URL de base de l'API REST du plug-in | `https://<serveur VBR>/extension/799a5a3e-ae1e-4eaf-86eb-8a9acc2670e2/api/v9` | `https://<appliance>/api/v8` |
-| Authentification | **Jeton OAuth VBR** réutilisé (`/api/oauth2/token` sur le port 9419). Pas de troisième identifiant. | Point d'authentification OAuth propre à l'appliance (`-AhvCredential`). |
+| Authentification | **Jeton OAuth VBR** réutilisé. Pas de troisième identifiant. | Point OAuth propre à l'appliance (`AHV_USER` / `AHV_PASSWORD`). |
 | `AhvApiVersion` | `v9` | `v8` |
 | `AhvAppliance` | Ignoré | FQDN / IP de l'appliance |
 | Versions minimales | VBR **13.0.1.1071+**, plug-in **13.9.0.212+**, AOS **6.8.1.6+**, Prism Central pc.2022.6 – pc.2024.3.1.10 ou **pc.7.3+** (pc.7.3.1.2, 7.3.1.3 et 7.5.0.0 exclus). iSCSI Data Services IP configurée sur le cluster. | Plug-in 6/7/8 selon la matrice de compatibilité Veeam. |
 
-**Workers (13.x).** Au moins un worker AHV doit être configuré dans VBR (*Backup Infrastructure → Backup Proxies → Add → Nutanix AHV worker*), idéalement un par cluster. VBR démarre le worker au lancement d'une session de restauration et l'arrête à la fin : la première restauration d'une exécution peut donc prendre quelques minutes de plus (démarrage du worker, plus une vérification de mise à jour optionnelle désactivable dans les propriétés du worker). En tenir compte dans `Thresholds.MaxRestoreMinutes`. Le script ne gère pas les workers — c'est VBR qui s'en charge.
+**Workers (13.x).** Au moins un worker AHV doit être configuré dans VBR (*Backup Infrastructure → Backup Proxies → Add → Nutanix AHV worker*), idéalement un par cluster. VBR démarre le worker au lancement d'une session de restauration et l'arrête à la fin : la première restauration d'une exécution peut prendre quelques minutes de plus (démarrage du worker, plus une vérification de mise à jour optionnelle désactivable). En tenir compte dans `Thresholds.MaxRestoreMinutes`. L'outil ne gère pas les workers — c'est VBR.
 
-**Endpoints.** Les endpoints du plug-in utilisés par le script (`/clusters`, `/clusters/{id}/networks`, `/clusters/{id}/storageContainers`, `/restorePoints/restore`, `/sessions/{id}`) sont identiques en v8 et v9. Seule la découverte des cartes réseau diffère : v9 utilise `/restorePoints/{id}/metadata` (`/networkAdapters` de v8 est déprécié) ; le script essaie `metadata` d'abord et bascule automatiquement.
+**Endpoints.** `/clusters`, `/clusters/{id}/networks`, `/clusters/{id}/storageContainers`, `/restorePoints/restore`, `/sessions/{id}` sont identiques en v8 et v9. La découverte des NIC utilise `/restorePoints/{id}/metadata` (v9) avec bascule automatique vers `/networkAdapters` (v8, déprécié). Les points de restauration viennent de `GET /api/v1/restorePoints` (VBR 13) avec bascule vers `/objectRestorePoints` (VBR 12).
 
 ## 2. Réseau : le sous-réseau isolé
 
-C'est le fondement de sécurité de tout le processus. Créer dans Prism un sous-réseau dédié qui est :
+Créer dans Prism un sous-réseau dédié qui est un **VLAN non routé**, **sans passerelle par défaut** dans son IPAM (ou sans IPAM), et **non marqué externe** (`is_external = false`). L'outil vérifie les trois points à chaque exécution (**CP02**, bloquant) et refuse de restaurer sinon.
 
-- un **VLAN non routé** (aucune interface L3 sur le cœur de réseau) ;
-- **sans passerelle par défaut** dans sa configuration IPAM (ou sans IPAM du tout) ;
-- **non marqué externe** (`is_external = false`).
-
-Le script vérifie ces trois points à chaque exécution (point de contrôle **CP02**, bloquant) et refuse de restaurer quoi que ce soit si le sous-réseau semble routé.
-
-Activer éventuellement l'IPAM Nutanix (DHCP) sur ce sous-réseau pour que les VM restaurées reçoivent une adresse ; sinon elles conservent leur IP statique de production, ce qui est acceptable puisque le VLAN est isolé. Dans les deux cas, l'IP est relue depuis les **Nutanix Guest Tools** (CP22) : NGT doit donc être installé dans les VM sources pour que CP22 / CP23 / CP30 passent.
-
-Après création du sous-réseau, **relancer un rescan du cluster dans l'appliance Veeam AHV** pour que le réseau apparaisse dans son inventaire (le point de contrôle **CP01** le recherche par son nom).
+Activer éventuellement l'IPAM Nutanix (DHCP) pour que les VM restaurées obtiennent une adresse ; sinon elles conservent leur IP statique de production, acceptable dans un VLAN isolé. Dans tous les cas l'IP est relue depuis **NGT**. Après création du sous-réseau, **relancer un rescan du serveur Nutanix dans Veeam** (13.x : *Backup Infrastructure → Managed Servers* ; 12.x : dans l'appliance) pour que CP01 le trouve par son nom.
 
 ## 3. La machine sonde
 
-Le script doit s'exécuter depuis une machine capable de joindre :
-
 | Destination | Port | Usage |
 |---|---|---|
-| Serveur VBR | 9419/tcp | Rechercher les derniers points de restauration, s'authentifier |
+| Serveur VBR | 9419/tcp | Points de restauration, authentification |
 | Serveur VBR (13.x) **ou** appliance AHV (12.x) | 443/tcp | Lancer et suivre les restaurations via l'API REST du plug-in |
 | Prism Central | 9440/tcp | Inspecter VM / sous-réseaux, arrêter, supprimer |
 | Sous-réseau isolé | ICMP, ports applicatifs | Ping CP23 et contrôles applicatifs CP30 |
 
-Pour la dernière ligne, la sonde a besoin d'une **seconde carte réseau attachée au sous-réseau isolé**. Si la sonde n'y est pas connectée, le script fonctionne quand même : CP23 et CP30 sont simplement rapportés en `SKIP`.
+Pour la dernière ligne la sonde a besoin d'une **seconde NIC attachée au sous-réseau isolé**. Sans cela l'outil fonctionne ; CP23 et CP30 sont `SKIP`.
 
 ## 4. Comptes
 
-Les identifiants sont demandés à l'exécution (ou fournis via `-VbrCredential`, `-PrismCredential`, et `-AhvCredential` pour 12.x) :
+| Système | Rôle minimal | Clés de secrets |
+|---|---|---|
+| Veeam Backup & Replication | 13.x : rôle autorisé à **lire les points de restauration et lancer des restaurations de VM Nutanix AHV** (Veeam Restore Operator, ou rôle RBAC personnalisé 13.1). 12.x : Veeam Restore Operator. | `VBR_USER`, `VBR_PASSWORD` |
+| Appliance Veeam AHV (**12.x uniquement**) | Portal Administrator ou Restore Operator. | `AHV_USER`, `AHV_PASSWORD` |
+| Prism Central | **Cluster Admin** ou rôle personnalisé avec *lecture VM / sous-réseau*, *mise à jour VM* (arrêt), *suppression VM*. | `PRISM_USER`, `PRISM_PASSWORD` |
 
-| Système | Rôle minimal |
-|---|---|
-| Veeam Backup & Replication | 13.x : un rôle autorisé à **lire les points de restauration et lancer des restaurations de VM Nutanix AHV** (Veeam Restore Operator, ou un rôle RBAC personnalisé à périmètre restreint introduit en 13.1). 12.x : Veeam Restore Operator. |
-| Appliance Veeam Plug-in for Nutanix AHV (**12.x uniquement**) | Compte autorisé à lancer une restauration de VM (Portal Administrator ou Restore Operator). |
-| Prism Central | **Cluster Admin** ou rôle personnalisé avec *lecture VM / sous-réseau*, *mise à jour VM* (arrêt) et *suppression VM*. |
+Les secrets sont lus depuis `--secrets-file` (JSON, `chmod 600`), puis les variables d'environnement, puis la saisie interactive. Jamais dans `RecoveryVerification.json`.
 
-Utiliser des comptes de service dédiés. Pour les exécutions non supervisées, stocker les identifiants dans un coffre et les récupérer avec [Microsoft.PowerShell.SecretManagement](https://github.com/PowerShell/SecretManagement) :
+## 5. Installer
 
-```powershell
-$vbr   = Get-Secret -Name RV-VBR   -AsPlainText:$false
-$prism = Get-Secret -Name RV-Prism -AsPlainText:$false
-.\Test-AhvBackupRestore.ps1 -VmNames SRV-A -Cleanup -VbrCredential $vbr -PrismCredential $prism
-# 12.x : ajouter  -AhvCredential (Get-Secret -Name RV-AHV -AsPlainText:$false)
+```bash
+# sonde Linux
+sudo mkdir -p /opt/veeam-recovery-verification /var/lib/veeam-recovery-verification/reports
+cd /opt/veeam-recovery-verification
+# copier ahv_backup_restore.py, RecoveryVerification.sample.json, deploy/ (git clone ou scp)
+chmod +x ahv_backup_restore.py deploy/rotate-sample.sh
+./ahv_backup_restore.py --init-config              # écrit RecoveryVerification.json - le renseigner
+cat > ~/.veeam-rv-secrets.json <<'EOF'
+{ "VBR_USER": "svc-rv", "VBR_PASSWORD": "…", "PRISM_USER": "svc-rv", "PRISM_PASSWORD": "…" }
+EOF
+chmod 600 ~/.veeam-rv-secrets.json
+./ahv_backup_restore.py -v SRV-A --secrets-file ~/.veeam-rv-secrets.json --dry-run --debug   # pré-vol seul
 ```
 
-## 5. Installer le script
+```powershell
+# sonde Windows (Python 3 depuis python.org / winget)
+py -3 ahv_backup_restore.py --init-config
+py -3 ahv_backup_restore.py -v SRV-A --secrets-file C:\ProgramData\VeeamRV\secrets.json --dry-run
+```
 
-1. Copier `Test-AhvBackupRestore.ps1` et `RecoveryVerification.sample.json` dans un dossier de la sonde, par ex. `C:\Tools\RecoveryVerification\`.
-2. Débloquer le fichier s'il a été téléchargé : `Unblock-File .\Test-AhvBackupRestore.ps1`.
-3. Générer le modèle de configuration et le renseigner :
+## 6. Planification
 
-   ```powershell
-   .\Test-AhvBackupRestore.ps1 -InitConfig
-   notepad .\RecoveryVerification.json
-   ```
+- **Linux** : `deploy/veeam-recovery-verification-ahv.service` + `.timer` (systemd), ou `deploy/rotate-sample.sh` pour une rotation quotidienne sur `vms.txt`. `SuccessExitStatus=1 2` garde l'unité verte quand une vérification échoue ; le résultat est dans les rapports.
+- **Windows** : `deploy/windows-scheduled-task.ps1` enregistre une tâche planifiée quotidienne lançant `python.exe`.
 
-   Ou copier l'exemple : `Copy-Item RecoveryVerification.sample.json RecoveryVerification.json`.
-4. Lancer une simulation pour valider connectivité et configuration sans rien restaurer :
+## 7. TLS
 
-   ```powershell
-   .\Test-AhvBackupRestore.ps1 -VmNames SRV-A -WhatIf -Verbose
-   ```
-
-   Les points de contrôle de pré-vol CP00–CP04 s'exécutent réellement ; les actions de restauration sont seulement affichées.
-
-## 6. Certificats TLS
-
-Tous les appels d'API utilisent `-SkipCertificateCheck` car les composants Veeam et Nutanix sont généralement livrés avec des certificats auto-signés. S'ils portent des certificats de confiance et que vous souhaitez une validation stricte, retirer `SkipCertificateCheck = $true` dans `Invoke-Api`, `Connect-Vbr` et `Connect-AhvAppliance`.
+Les appels REST ignorent la validation des certificats par défaut (auto-signés VBR / Prism). Ajouter `--verify-tls` une fois des certificats de confiance en place.
 
 ## Étape suivante
 
