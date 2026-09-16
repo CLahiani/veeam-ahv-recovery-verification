@@ -1,0 +1,21 @@
+# /etc/systemd/system/veeam-recovery-verification-ahv.service  (Linux probe)
+# Install: cp deploy/*.service deploy/*.timer /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now veeam-recovery-verification-ahv.timer
+[Unit]
+Description=Veeam Recovery Verification - Nutanix AHV restore to isolated subnet
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=svc-rv
+WorkingDirectory=/opt/veeam-recovery-verification
+# Secrets file: {"VBR_USER": "...", "VBR_PASSWORD": "...", "PRISM_USER": "...", "PRISM_PASSWORD": "..."}  (chmod 600, owned by svc-rv)
+ExecStart=/usr/bin/python3 /opt/veeam-recovery-verification/ahv_backup_restore.py \
+    --config /opt/veeam-recovery-verification/RecoveryVerification.json \
+    --secrets-file /home/svc-rv/.veeam-rv-secrets.json \
+    --report-dir /var/lib/veeam-recovery-verification/reports \
+    --vm SRV-AD01 --vm SRV-FILE01 \
+    --ping-check --cleanup --fail-on-warning
+# Exit codes 1 / 2 mean "verification failed", not "unit broken": keep the timer green, read the reports.
+SuccessExitStatus=1 2
+TimeoutStartSec=3h
