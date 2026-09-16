@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 Toutes les évolutions notables de ce projet sont consignées ici. Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [1.1.1] - 2026-09-16
+
+### Fixed / Corrigé
+- **EN** Restore point lookup uses the VBR 13 REST endpoint `GET /api/v1/restorePoints` (`platformNameFilter=Nutanix`) with automatic fallback to the VBR 12 endpoint `/objectRestorePoints` (`NutanixAhv`). Also sets `VbrApiVersion` default to `1.3-rev2` (13.1).
+- **FR** La recherche du point de restauration utilise l'endpoint REST VBR 13 `GET /api/v1/restorePoints` (`platformNameFilter=Nutanix`) avec bascule automatique vers l'endpoint VBR 12 `/objectRestorePoints` (`NutanixAhv`). La valeur par défaut de `VbrApiVersion` passe à `1.3-rev2` (13.1).
+
 ## [1.1.0] - 2026-09-15
 
 ### Added / Ajouté

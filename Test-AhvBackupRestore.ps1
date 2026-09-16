@@ -474,7 +474,7 @@ $DefaultConfig = [ordered]@{
     Veeam = [ordered]@{
         VbrServer     = "vbr.example.local"        # Veeam Backup & Replication server
         VbrPort       = 9419                       # VBR REST API port (default 9419)
-        VbrApiVersion = "1.3-rev1"                 # x-api-version header: 1.3-rev1 = VBR 13.x, 1.2-rev0 = VBR 12.x
+        VbrApiVersion = "1.3-rev2"                 # x-api-version header: 1.3-rev2 = VBR 13.1, 1.3-rev1 = 13.0, 1.2-rev0 = 12.x
         AhvIntegrated = $true                      # true = VBR 13.x (plug-in integrated, workers) | false = 12.x appliance
         AhvAppliance  = "veeam-ahv.example.local"  # 12.x only: standalone Veeam Plug-in for Nutanix AHV appliance
         AhvApiVersion = "v9"                       # Plug-in API version: v9 = VBR 13.x integrated, v8 = 12.x appliance
@@ -709,8 +709,11 @@ function Connect-Prism {
 function Get-LatestRestorePoint {
     <# Latest Veeam restore point of a Nutanix AHV VM (VBR API), exact name match. #>
     param($Vbr, [string]$VmName)
-    $uri = "$($Vbr.Base)/v1/objectRestorePoints?nameFilter=$([uri]::EscapeDataString($VmName))&platformNameFilter=NutanixAhv&orderColumn=CreationTime&orderAsc=false&limit=5"
-    $rps = Get-Items (Invoke-Api GET $uri $Vbr.Headers) | Where-Object { $_.name -eq $VmName }   # [API] nameFilter is "contains"
+    # [API] VBR 13 (1.3-revN): GET /api/v1/restorePoints, platformNameFilter=Nutanix. VBR 12 (1.2-revN): /objectRestorePoints, NutanixAhv.
+    $name = [uri]::EscapeDataString($VmName)
+    try   { $rps = Get-Items (Invoke-Api GET "$($Vbr.Base)/v1/restorePoints?nameFilter=$name&platformNameFilter=Nutanix&orderColumn=CreationTime&orderAsc=false&limit=10" $Vbr.Headers) }
+    catch { $rps = Get-Items (Invoke-Api GET "$($Vbr.Base)/v1/objectRestorePoints?nameFilter=$name&platformNameFilter=NutanixAhv&orderColumn=CreationTime&orderAsc=false&limit=10" $Vbr.Headers) }
+    $rps = $rps | Where-Object { $_.name -eq $VmName }   # nameFilter is "contains"
     return $rps | Sort-Object creationTime -Descending | Select-Object -First 1
 }
 

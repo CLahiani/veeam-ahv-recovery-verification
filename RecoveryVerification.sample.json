@@ -2,7 +2,7 @@
   "Veeam": {
     "VbrServer": "vbr.example.local",
     "VbrPort": 9419,
-    "VbrApiVersion": "1.3-rev1",
+    "VbrApiVersion": "1.3-rev2",
     "AhvIntegrated": true,
     "AhvAppliance": "veeam-ahv.example.local",
     "AhvApiVersion": "v9"
