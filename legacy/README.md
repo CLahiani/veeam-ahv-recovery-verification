@@ -1,0 +1,5 @@
+# legacy/ — v1 PowerShell implementation
+
+**EN** — `Test-AhvBackupRestore.ps1` (v1.1.1) is the original PowerShell 7 implementation for a Windows probe. It is superseded by `../ahv_backup_restore.py` (v2.0.0), which runs from any Linux or Windows host with Python 3, standard library only, and reads secrets from a file / the environment instead of `Get-Credential`. Kept for reference only; **not maintained**. `RecoveryVerification.sample.json` here is its configuration format (compatible with v2 except for SQL check credentials).
+
+**FR** — `Test-AhvBackupRestore.ps1` (v1.1.1) est l'implémentation PowerShell 7 d'origine pour une sonde Windows. Elle est remplacée par `../ahv_backup_restore.py` (v2.0.0), qui s'exécute depuis tout hôte Linux ou Windows avec Python 3, bibliothèque standard uniquement, et lit les secrets depuis un fichier / l'environnement plutôt que `Get-Credential`. Conservée pour référence uniquement ; **non maintenue**. `RecoveryVerification.sample.json` ici est son format de configuration (compatible avec la v2 sauf pour les identifiants du contrôle SQL).
