@@ -10,11 +10,11 @@ Every check is recorded as a **checkpoint** with a status `OK`, `KO`, `WARN` or 
 
 | CP | Check | OK | WARN | KO | Blocking |
 |---|---|---|---|---|---|
-| **CP00** | Authentication to VBR, AHV appliance, Prism Central | 3 tokens obtained | — | Any login failed (HTTP 401 / network) | ✔ |
+| **CP00** | Authentication to VBR, AHV plug-in (13.x integrated / 12.x appliance), Prism Central | All OK; detail shows the mode | — | Any login failed (HTTP 401 / network) | ✔ |
 | **CP01** | Cluster, storage container and isolated subnet exist in the appliance inventory | All three found by name | — | One is missing (`Detail` says which) | ✔ |
 | **CP02** | Isolated subnet is **not routed** (Prism: `is_external = false`, no default gateway) | Both conditions true | — | Subnet not found in Prism, or external, or has a gateway | ✔ |
 | **CP03** | No foreign VM on the isolated subnet | No VM, or only `<prefix>*` VMs | — | VMs not starting with the prefix are attached (listed) | — |
-| **CP04** | No leftover test VM (`<prefix>*`) from a previous run | None | Leftovers found **and deleted** (`-Cleanup`) | Leftovers found without `-Cleanup`, or deletion failed | ✔ |
+| **CP04** | No leftover test VM (`<prefix>*`) from a previous run | None | Leftovers found **and deleted** (`--cleanup`) | Leftovers found without `--cleanup`, or deletion failed | ✔ |
 
 ## Step 1 — Restore (per VM)
 
@@ -22,7 +22,7 @@ Every check is recorded as a **checkpoint** with a status `OK`, `KO`, `WARN` or 
 |---|---|---|---|---|---|
 | **CP10** | Latest Nutanix AHV restore point found in VBR (exact name match) | Found, `Detail` = creation time | — | No restore point → remaining CPs `SKIP` | — |
 | **CP11** | Restore point age ≤ `MaxRestorePointAgeHours` (**RPO**) | Age within target | — | Older than target (`RPO missed, check the backup job`) | — |
-| **CP12** | Restore session started and completed with `Success` / `Warning` | `Success` | `Warning` | Launch failed, `Failed`, or `Timeout` after `MaxRestoreMinutes + BootTimeoutMinutes` → remaining CPs `SKIP` | `-WhatIf` |
+| **CP12** | Restore session started and completed with `Success` / `Warning` | `Success` | `Warning` | Launch failed, `Failed`, or `Timeout` after `MaxRestoreMinutes + BootTimeoutMinutes` → remaining CPs `SKIP` | `--dry-run` |
 
 ## Step 2 — Verify (per VM)
 
@@ -32,22 +32,22 @@ Every check is recorded as a **checkpoint** with a status `OK`, `KO`, `WARN` or 
 | **CP20** | Test VM found in Prism and `power_state = ON` | `ON` | — | VM not found, or not `ON` after `BootTimeoutMinutes` | Restore failed |
 | **CP21** | **Guardrail** — every NIC of the test VM is on the isolated subnet | All NICs on the isolated subnet | No NIC attached although the source had some | A NIC is on another subnet → **VM powered off immediately** | Restore failed |
 | **CP22** | IP address reported by Nutanix Guest Tools | IP present (`Detail` = IP) | VM is `ON` but no IP (NGT missing, no DHCP, OS still booting) | VM not `ON` and no IP | Restore failed |
-| **CP23** | Ping from the probe (`-PingCheck`) | 2 echo replies | — | No reply | `-PingCheck` off, or no IP |
-| **CP30** | Application checks — **one checkpoint per check** (`Application: <Label>`) | Check passed | — | Check failed (`Detail` = reason) | No IP, no check defined, `SqlServer` module missing, unknown type |
+| **CP23** | Ping from the probe (`--ping-check`) | 2 echo replies | — | No reply | `--ping-check` off, or no IP |
+| **CP30** | Application checks — **one checkpoint per check** (`Application: <Label>`) | Check passed | — | Check failed (`Detail` = reason) | No IP, no check defined, python module (`ldap3` / `dnspython` / `pymssql`) missing, unknown type |
 
 ## Step 3 — Cleanup (per VM, always attempted)
 
 | CP | Check | OK | KO | SKIP |
 |---|---|---|---|---|
-| **CP40** | Test VM powered off and deleted (`-Cleanup`) | Deleted | Deletion failed (`delete '…' manually in Prism`) | `-Cleanup` off (VM kept), or VM never found |
+| **CP40** | Test VM powered off and deleted (`--cleanup`) | Deleted | Deletion failed (`delete '…' manually in Prism`) | `--cleanup` off (VM kept), or VM never found |
 
 ## Per-VM result and exit code
 
 | Situation | Per-VM `Result` | Exit code |
 |---|---|---|
 | No `KO`, no `WARN` | `OK` | `0` |
-| `WARN` only, without `-FailOnWarning` | `OK (warnings)` | `0` |
-| `WARN` only, with `-FailOnWarning` | `KO` | `1` |
+| `WARN` only, without `--fail-on-warning` | `OK (warnings)` | `0` |
+| `WARN` only, with `--fail-on-warning` | `KO` | `1` |
 | Any `KO` | `KO` | `1` |
 | Blocking pre-flight failure or fatal error | — | `2` |
 
