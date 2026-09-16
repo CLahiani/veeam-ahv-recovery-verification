@@ -9,7 +9,7 @@
 | PowerShell | **7.2 ou supérieur** (`pwsh`). Windows PowerShell 5.1 n'est pas pris en charge (`SkipCertificateCheck`, opérateur ternaire, `ConvertFrom-Json -AsHashtable`). |
 | OS de la machine sonde | Windows recommandé. `Test-NetConnection` et `Resolve-DnsName` (utilisés par les contrôles Tcp / Ldap / Dns) sont des cmdlets Windows. Sous Linux, seuls les contrôles Http et Sql fonctionnent. |
 | Module `SqlServer` | Uniquement si des contrôles applicatifs `Sql` sont définis : `Install-Module SqlServer -Scope CurrentUser` |
-| Veeam Backup & Replication | API REST activée (port **9419** par défaut). `Veeam.VbrApiVersion` = `1.3-rev1` pour VBR 13.x, `1.2-rev0` pour 12.x. |
+| Veeam Backup & Replication | API REST activée (port **9419** par défaut). `Veeam.VbrApiVersion` = `1.3-rev2` pour VBR 13.1 (`1.3-rev1` pour 13.0), `1.2-rev0` pour 12.x. |
 | Veeam Plug-in for Nutanix AHV | Voir [Veeam 13.x vs 12.x](#veeam-13x-plug-in-intégré-vs-12x-appliance) ci-dessous. |
 | Nutanix Prism Central | API v3 (port **9440** par défaut). |
 

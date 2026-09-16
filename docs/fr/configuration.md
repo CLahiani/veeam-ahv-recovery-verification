@@ -15,7 +15,7 @@ La configuration est un fichier JSON, `.\RecoveryVerification.json` par défaut 
   "Veeam": {
     "VbrServer": "vbr.example.local",
     "VbrPort": 9419,
-    "VbrApiVersion": "1.3-rev1",
+    "VbrApiVersion": "1.3-rev2",
     "AhvIntegrated": true,
     "AhvAppliance": "veeam-ahv.example.local",
     "AhvApiVersion": "v9"
@@ -54,7 +54,7 @@ La configuration est un fichier JSON, `.\RecoveryVerification.json` par défaut 
 |---|---|---|---|
 | `VbrServer` | `-VbrServer` | Serveur Veeam Backup & Replication (FQDN ou IP). | `vbr.example.local` |
 | `VbrPort` | `-VbrPort` | Port de l'API REST VBR. | `9419` |
-| `VbrApiVersion` | `-VbrApiVersion` | Valeur de l'en-tête `x-api-version`. **`1.3-rev1` pour VBR 13.x**, `1.2-rev0` pour 12.x. | `1.3-rev1` |
+| `VbrApiVersion` | `-VbrApiVersion` | Valeur de l'en-tête `x-api-version`. **`1.3-rev2` pour VBR 13.1 (`1.3-rev1` pour 13.0)**, `1.2-rev0` pour 12.x. | `1.3-rev2` |
 | `AhvIntegrated` | `-AhvIntegrated` | **`true` = VBR 13.x** (plug-in intégré à VBR, architecture à workers, API du plug-in servie par le serveur VBR avec le jeton VBR). **`false` = appliance autonome VBR 12.x**. Voir [Installation](installation.md#veeam-13x-plug-in-intégré-vs-12x-appliance). | `true` |
 | `AhvAppliance` | `-AhvAppliance` | **12.x uniquement** (`AhvIntegrated: false`) : FQDN ou IP de l'appliance (HTTPS 443). Ignoré en 13.x. | `veeam-ahv.example.local` |
 | `AhvApiVersion` | `-AhvApiVersion` | Version de l'API REST du plug-in : **`v9` pour 13.x**, `v8` pour l'appliance 12.x. | `v9` |

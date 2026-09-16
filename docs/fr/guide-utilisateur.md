@@ -150,7 +150,7 @@ Couleurs : vert `OK`, rouge `KO`, jaune `WARN`, gris `SKIP`. Un tableau de synth
 
 | Symptôme | Cause probable / correction |
 |---|---|
-| CP00 KO `HTTP 401` | Identifiants incorrects, ou en-tête de version d'API VBR refusé → `Veeam.VbrApiVersion` = `1.3-rev1` (13.x) / `1.2-rev0` (12.x). |
+| CP00 KO `HTTP 401` | Identifiants incorrects, ou en-tête de version d'API VBR refusé → `Veeam.VbrApiVersion` = `1.3-rev2` (13.1) / `1.2-rev0` (12.x). |
 | CP00 KO `HTTP 404` sur `/extension/…/api/v9/clusters` | Mode 13.x contre un serveur 12.x, ou plug-in AHV non installé sur le serveur VBR → vérifier `AhvIntegrated`, ou installer le plug-in (Backup Infrastructure → Add Server → Nutanix AHV). |
 | CP00 KO connexion refusée sur l'appliance | `AhvIntegrated: false` contre un environnement 13.x où l'appliance n'existe plus → passer `AhvIntegrated: true`, `AhvApiVersion: v9`. |
 | CP01 KO `sous-réseau '…' introuvable` | Réseau créé dans Prism mais inventaire du plug-in non rafraîchi → relancer un rescan du serveur Nutanix dans VBR (13.x) ou dans l'appliance (12.x). |
