@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 Toutes les évolutions notables de ce projet sont consignées ici. Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [2.0.1] - 2026-09-16
+
+### Fixed / Corrigé
+- **EN** RTO measurement: restore sessions are now polled round-robin (`Ahv.wait_sessions`) so each VM's duration is its own, not inflated by the time spent waiting on earlier VMs. `examples/` added (reports on fake data); `.gitattributes` for GitHub language statistics.
+- **FR** Mesure du RTO : les sessions de restauration sont désormais interrogées en tourniquet (`Ahv.wait_sessions`), la durée de chaque VM est la sienne et non gonflée par l'attente des VM précédentes. Ajout de `examples/` (rapports sur données fictives) ; `.gitattributes` pour les statistiques de langage GitHub.
+
 ## [2.0.0] - 2026-09-16
 
 ### Changed / Modifié

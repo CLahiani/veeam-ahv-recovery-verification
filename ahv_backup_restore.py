@@ -71,7 +71,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 AHV_EXTENSION_ID = "799a5a3e-ae1e-4eaf-86eb-8a9acc2670e2"   # Veeam Plug-in for Nutanix AHV extension id in VBR 13.x (fixed)
 
 # =====================================================================================
@@ -503,17 +503,25 @@ class Ahv:
         resp = self.post("/restorePoints/restore", body)
         return {"SessionId": resp["sessionId"], "NicCount": len(nic_map)}
 
-    def wait_session(self, session_id: str, timeout_min: int, poll_s: int) -> str:
-        pending = {"Running", "InProgress", "None", "Pending", None}
-        deadline = time.time() + timeout_min * 60
-        status = None
-        while True:
+    PENDING = {"Running", "InProgress", "None", "Pending", None}
+
+    def session_status(self, session_id: str) -> Optional[str]:
+        s = self.get(f"/sessions/{session_id}")
+        return s.get("result") or s.get("status")                                        # [API]
+
+    def wait_sessions(self, sessions: Dict[str, Dict[str, Any]], timeout_min: int, poll_s: int) -> None:
+        """Round-robin polling of all restore sessions; records Status and EndedAt per VM (accurate RTO for each)."""
+        while any(s.get("Status") is None for s in sessions.values()):
             time.sleep(poll_s)
-            s = self.get(f"/sessions/{session_id}")
-            status = s.get("result") or s.get("status")                                  # [API]
-            if status not in pending or time.time() >= deadline:
-                break
-        return "Timeout" if status in pending else str(status)
+            now = time.time()
+            for s in sessions.values():
+                if s.get("Status") is not None:
+                    continue
+                st = self.session_status(s["SessionId"])
+                if st not in self.PENDING:
+                    s["Status"], s["EndedAt"] = str(st), now
+                elif now - s["Started"] >= timeout_min * 60:
+                    s["Status"], s["EndedAt"] = "Timeout", now
 
 
 class Prism:
@@ -874,11 +882,13 @@ def main() -> int:  # noqa: C901 - orchestration
 
         # ------------------------------------------------------------------ Step 2
         run.step(L("Step2"))
+        if sessions:
+            ahv.wait_sessions(sessions, int(th["MaxRestoreMinutes"]) + int(th["BootTimeoutMinutes"]), poll)
         for vm, s in sessions.items():
             vm_uuid: Optional[str] = None
             try:
-                status = ahv.wait_session(s["SessionId"], int(th["MaxRestoreMinutes"]) + int(th["BootTimeoutMinutes"]), poll)
-                dur_min = round((time.time() - s["Started"]) / 60, 1)
+                status = s["Status"]
+                dur_min = round((s["EndedAt"] - s["Started"]) / 60, 1)
                 if status not in ("Success", "Warning"):
                     run.cp("CP12", vm, L("CP12"), "KO", L("D_SessionFailed", status, dur_min)); run.skip_remaining(vm, L("D_RestoreFailed")); continue
                 run.cp("CP12", vm, L("CP12"), "OK" if status == "Success" else "WARN", status)
