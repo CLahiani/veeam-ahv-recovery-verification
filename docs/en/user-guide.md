@@ -150,7 +150,7 @@ Colours: green `OK`, red `KO`, yellow `WARN`, grey `SKIP`. A summary table per V
 
 | Symptom | Likely cause / fix |
 |---|---|
-| CP00 KO `HTTP 401` | Wrong credentials, or VBR API version header not accepted → `Veeam.VbrApiVersion` = `1.3-rev1` (13.x) / `1.2-rev0` (12.x). |
+| CP00 KO `HTTP 401` | Wrong credentials, or VBR API version header not accepted → `Veeam.VbrApiVersion` = `1.3-rev2` (13.1) / `1.2-rev0` (12.x). |
 | CP00 KO `HTTP 404` on `/extension/…/api/v9/clusters` | 13.x mode against a 12.x server, or AHV plug-in not installed on the VBR server → check `AhvIntegrated`, or install the plug-in (Backup Infrastructure → Add Server → Nutanix AHV). |
 | CP00 KO connection refused on appliance | `AhvIntegrated: false` against a 13.x environment where the appliance no longer exists → set `AhvIntegrated: true`, `AhvApiVersion: v9`. |
 | CP01 KO `subnet '…' not found` | Network created in Prism but plug-in inventory not refreshed → rescan the Nutanix server in VBR (13.x) or in the appliance (12.x). |
