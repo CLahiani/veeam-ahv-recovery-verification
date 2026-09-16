@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Recovery Verification - Nutanix AHV - 20260919-050000</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#222;margin:24px;background:#fafafa}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:16px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}
+.banner{color:#fff;padding:10px 14px;border-radius:4px;font-weight:600;margin:12px 0;background:#c62828}
+.kpi{display:inline-block;background:#fff;border:1px solid #e0e0e0;border-radius:4px;padding:8px 14px;margin:0 8px 8px 0}.kpi b{font-size:18px;display:block}
+table{border-collapse:collapse;width:100%;background:#fff}th,td{border:1px solid #e0e0e0;padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#f0f0f0}td.ok{background:#e8f5e9;color:#2e7d32;font-weight:600}td.ko{background:#ffebee;color:#c62828;font-weight:600}
+td.warn{background:#fff3e0;color:#ef6c00;font-weight:600}td.skip{color:#888}small{color:#666}
+</style></head><body>
+<h1>Recovery Verification - Nutanix AHV</h1>
+<small>Run 20260919-050000 &middot; 2026-09-19 06:18 &middot; Cluster CLUSTER-01 &middot; Isolated subnet VLAN-RecoveryVerification &middot; VBR vbr01.lab.example</small>
+<div class="banner">FAILED - 3 checkpoint(s) KO</div>
+<div class="kpi"><b>5</b>VMs verified</div><div class="kpi"><b>44</b>checks OK</div>
+<div class="kpi"><b>2</b>warnings</div><div class="kpi"><b>3</b>failures</div>
+<div class="kpi"><b>30 h</b>RPO target</div><div class="kpi"><b>45 min</b>RTO target</div>
+<h2>Summary per VM</h2>
+<table><tr><th>VM</th><th>Restore point age (h)</th><th>Restore duration (min)</th><th>IP</th><th>KO</th><th>WARN</th><th>Result</th></tr>
+<tr><td>SRV-AD01</td><td>6.8</td><td>17.5</td><td>192.168.250.11</td><td>0</td><td>0</td><td class='ok'>OK</td></tr>
+<tr><td>SRV-FILE01</td><td>6.3</td><td>8.6</td><td>192.168.250.12</td><td>0</td><td>0</td><td class='ok'>OK</td></tr>
+<tr><td>SRV-WEB01</td><td>30.9</td><td>13.5</td><td>192.168.250.13</td><td>2</td><td>0</td><td class='ko'>KO</td></tr>
+<tr><td>SRV-SQL01</td><td>6.0</td><td>51.4</td><td></td><td>0</td><td>2</td><td class='warn'>OK (warnings)</td></tr>
+<tr><td>SRV-OLD01</td><td></td><td></td><td></td><td>1</td><td>0</td><td class='ko'>KO</td></tr></table>
+<h2>Checkpoint details</h2>
+<table><tr><th>Time</th><th>CP</th><th>VM</th><th>Check</th><th>Status</th><th>Detail</th></tr>
+<tr><td>2026-09-19T05:00:06</td><td>CP00</td><td>-</td><td>Authentication VBR / AHV plug-in / Prism Central</td><td class='ok'>OK</td><td>VBR 13.x integrated plug-in (v9)</td></tr>
+<tr><td>2026-09-19T05:00:09</td><td>CP01</td><td>-</td><td>Cluster, storage container and isolated subnet present</td><td class='ok'>OK</td><td>CLUSTER-01 / default-container / VLAN-RecoveryVerification</td></tr>
+<tr><td>2026-09-19T05:00:12</td><td>CP02</td><td>-</td><td>Isolated subnet is non-routed</td><td class='ok'>OK</td><td>is_external=false, no gateway</td></tr>
+<tr><td>2026-09-19T05:00:15</td><td>CP03</td><td>-</td><td>No foreign VM on the isolated subnet</td><td class='ok'>OK</td><td></td></tr>
+<tr><td>2026-09-19T05:00:18</td><td>CP04</td><td>-</td><td>No leftover test VM</td><td class='ok'>OK</td><td></td></tr>
+<tr><td>2026-09-19T05:00:24</td><td>CP10</td><td>SRV-AD01</td><td>Restore point found</td><td class='ok'>OK</td><td>created on 2026-09-18T22:14:07Z</td></tr>
+<tr><td>2026-09-19T05:00:27</td><td>CP11</td><td>SRV-AD01</td><td>Restore point age &lt;= 30 h</td><td class='ok'>OK</td><td>6.8 h</td></tr>
+<tr><td>2026-09-19T05:01:13</td><td>CP10</td><td>SRV-FILE01</td><td>Restore point found</td><td class='ok'>OK</td><td>created on 2026-09-18T22:41:52Z</td></tr>
+<tr><td>2026-09-19T05:01:16</td><td>CP11</td><td>SRV-FILE01</td><td>Restore point age &lt;= 30 h</td><td class='ok'>OK</td><td>6.3 h</td></tr>
+<tr><td>2026-09-19T05:02:02</td><td>CP10</td><td>SRV-WEB01</td><td>Restore point found</td><td class='ok'>OK</td><td>created on 2026-09-17T22:10:33Z</td></tr>
+<tr><td>2026-09-19T05:02:05</td><td>CP11</td><td>SRV-WEB01</td><td>Restore point age &lt;= 30 h</td><td class='ko'>KO</td><td>30.9 h - RPO missed, check the backup job</td></tr>
+<tr><td>2026-09-19T05:02:51</td><td>CP10</td><td>SRV-SQL01</td><td>Restore point found</td><td class='ok'>OK</td><td>created on 2026-09-18T23:05:18Z</td></tr>
+<tr><td>2026-09-19T05:02:54</td><td>CP11</td><td>SRV-SQL01</td><td>Restore point age &lt;= 30 h</td><td class='ok'>OK</td><td>6.0 h</td></tr>
+<tr><td>2026-09-19T05:03:40</td><td>CP10</td><td>SRV-OLD01</td><td>Restore point found</td><td class='ko'>KO</td><td>no Nutanix AHV restore point for this name</td></tr>
+<tr><td>2026-09-19T05:03:43</td><td>CP13</td><td>SRV-OLD01</td><td>Post-restore check</td><td class='skip'>SKIP</td><td>no restore point</td></tr>
+<tr><td>2026-09-19T05:03:46</td><td>CP20</td><td>SRV-OLD01</td><td>Post-restore check</td><td class='skip'>SKIP</td><td>no restore point</td></tr>
+<tr><td>2026-09-19T05:03:49</td><td>CP21</td><td>SRV-OLD01</td><td>Post-restore check</td><td class='skip'>SKIP</td><td>no restore point</td></tr>
+<tr><td>2026-09-19T05:03:52</td><td>CP22</td><td>SRV-OLD01</td><td>Post-restore check</td><td class='skip'>SKIP</td><td>no restore point</td></tr>
+<tr><td>2026-09-19T05:03:55</td><td>CP23</td><td>SRV-OLD01</td><td>Post-restore check</td><td class='skip'>SKIP</td><td>no restore point</td></tr>
+<tr><td>2026-09-19T05:03:58</td><td>CP30</td><td>SRV-OLD01</td><td>Post-restore check</td><td class='skip'>SKIP</td><td>no restore point</td></tr>
+<tr><td>2026-09-19T05:04:01</td><td>CP40</td><td>SRV-OLD01</td><td>Post-restore check</td><td class='skip'>SKIP</td><td>no restore point</td></tr>
+<tr><td>2026-09-19T05:55:06</td><td>CP12</td><td>SRV-AD01</td><td>Restore session completed</td><td class='ok'>OK</td><td>Success</td></tr>
+<tr><td>2026-09-19T05:55:09</td><td>CP13</td><td>SRV-AD01</td><td>Restore duration &lt;= 45 min</td><td class='ok'>OK</td><td>17.5 min</td></tr>
+<tr><td>2026-09-19T05:56:21</td><td>CP20</td><td>SRV-AD01</td><td>VM powered on</td><td class='ok'>OK</td><td>power_state = ON</td></tr>
+<tr><td>2026-09-19T05:56:24</td><td>CP21</td><td>SRV-AD01</td><td>NICs only on the isolated subnet</td><td class='ok'>OK</td><td></td></tr>
+<tr><td>2026-09-19T05:56:27</td><td>CP22</td><td>SRV-AD01</td><td>IP address reported (Nutanix Guest Tools)</td><td class='ok'>OK</td><td>192.168.250.11</td></tr>
+<tr><td>2026-09-19T05:56:30</td><td>CP23</td><td>SRV-AD01</td><td>Ping from the probe</td><td class='ok'>OK</td><td>192.168.250.11</td></tr>
+<tr><td>2026-09-19T05:56:33</td><td>CP30</td><td>SRV-AD01</td><td>Application: RDP (Windows)</td><td class='ok'>OK</td><td>tcp/3389</td></tr>
+<tr><td>2026-09-19T05:56:36</td><td>CP30</td><td>SRV-AD01</td><td>Application: LDAP</td><td class='ok'>OK</td><td>anonymous RootDSE bind OK</td></tr>
+<tr><td>2026-09-19T05:56:39</td><td>CP30</td><td>SRV-AD01</td><td>Application: Zone DNS</td><td class='ok'>OK</td><td>example.local -&gt; 192.168.250.11</td></tr>
+<tr><td>2026-09-19T05:56:42</td><td>CP30</td><td>SRV-AD01</td><td>Application: Kerberos</td><td class='ok'>OK</td><td>tcp/88</td></tr>
+<tr><td>2026-09-19T05:57:25</td><td>CP40</td><td>SRV-AD01</td><td>Test VM deleted</td><td class='ok'>OK</td><td>RV-SRV-AD01</td></tr>
+<tr><td>2026-09-19T05:57:28</td><td>CP12</td><td>SRV-FILE01</td><td>Restore session completed</td><td class='ok'>OK</td><td>Success</td></tr>
+<tr><td>2026-09-19T05:57:31</td><td>CP13</td><td>SRV-FILE01</td><td>Restore duration &lt;= 45 min</td><td class='ok'>OK</td><td>8.6 min</td></tr>
+<tr><td>2026-09-19T05:58:43</td><td>CP20</td><td>SRV-FILE01</td><td>VM powered on</td><td class='ok'>OK</td><td>power_state = ON</td></tr>
+<tr><td>2026-09-19T05:58:46</td><td>CP21</td><td>SRV-FILE01</td><td>NICs only on the isolated subnet</td><td class='ok'>OK</td><td></td></tr>
+<tr><td>2026-09-19T05:58:49</td><td>CP22</td><td>SRV-FILE01</td><td>IP address reported (Nutanix Guest Tools)</td><td class='ok'>OK</td><td>192.168.250.12</td></tr>
+<tr><td>2026-09-19T05:58:52</td><td>CP23</td><td>SRV-FILE01</td><td>Ping from the probe</td><td class='ok'>OK</td><td>192.168.250.12</td></tr>
+<tr><td>2026-09-19T05:58:55</td><td>CP30</td><td>SRV-FILE01</td><td>Application: RDP (Windows)</td><td class='ok'>OK</td><td>tcp/3389</td></tr>
+<tr><td>2026-09-19T05:58:58</td><td>CP30</td><td>SRV-FILE01</td><td>Application: SMB</td><td class='ok'>OK</td><td>tcp/445</td></tr>
+<tr><td>2026-09-19T05:59:41</td><td>CP40</td><td>SRV-FILE01</td><td>Test VM deleted</td><td class='ok'>OK</td><td>RV-SRV-FILE01</td></tr>
+<tr><td>2026-09-19T05:59:44</td><td>CP12</td><td>SRV-WEB01</td><td>Restore session completed</td><td class='ok'>OK</td><td>Success</td></tr>
+<tr><td>2026-09-19T05:59:47</td><td>CP13</td><td>SRV-WEB01</td><td>Restore duration &lt;= 45 min</td><td class='ok'>OK</td><td>13.5 min</td></tr>
+<tr><td>2026-09-19T06:00:59</td><td>CP20</td><td>SRV-WEB01</td><td>VM powered on</td><td class='ok'>OK</td><td>power_state = ON</td></tr>
+<tr><td>2026-09-19T06:01:02</td><td>CP21</td><td>SRV-WEB01</td><td>NICs only on the isolated subnet</td><td class='ok'>OK</td><td></td></tr>
+<tr><td>2026-09-19T06:01:05</td><td>CP22</td><td>SRV-WEB01</td><td>IP address reported (Nutanix Guest Tools)</td><td class='ok'>OK</td><td>192.168.250.13</td></tr>
+<tr><td>2026-09-19T06:01:08</td><td>CP23</td><td>SRV-WEB01</td><td>Ping from the probe</td><td class='ok'>OK</td><td>192.168.250.13</td></tr>
+<tr><td>2026-09-19T06:01:11</td><td>CP30</td><td>SRV-WEB01</td><td>Application: RDP (Windows)</td><td class='ok'>OK</td><td>tcp/3389</td></tr>
+<tr><td>2026-09-19T06:01:14</td><td>CP30</td><td>SRV-WEB01</td><td>Application: Health endpoint</td><td class='ko'>KO</td><td>HTTP 503 https://192.168.250.13/health</td></tr>
+<tr><td>2026-09-19T06:01:57</td><td>CP40</td><td>SRV-WEB01</td><td>Test VM deleted</td><td class='ok'>OK</td><td>RV-SRV-WEB01</td></tr>
+<tr><td>2026-09-19T06:02:00</td><td>CP12</td><td>SRV-SQL01</td><td>Restore session completed</td><td class='ok'>OK</td><td>Success</td></tr>
+<tr><td>2026-09-19T06:02:03</td><td>CP13</td><td>SRV-SQL01</td><td>Restore duration &lt;= 45 min</td><td class='warn'>WARN</td><td>51.4 min - RTO target exceeded</td></tr>
+<tr><td>2026-09-19T06:17:29</td><td>CP20</td><td>SRV-SQL01</td><td>VM powered on</td><td class='ok'>OK</td><td>power_state = ON</td></tr>
+<tr><td>2026-09-19T06:17:32</td><td>CP21</td><td>SRV-SQL01</td><td>NICs only on the isolated subnet</td><td class='ok'>OK</td><td></td></tr>
+<tr><td>2026-09-19T06:17:35</td><td>CP22</td><td>SRV-SQL01</td><td>IP address reported (Nutanix Guest Tools)</td><td class='warn'>WARN</td><td>no IP - NGT missing, no DHCP on the isolated subnet, or OS not booted</td></tr>
+<tr><td>2026-09-19T06:17:38</td><td>CP23</td><td>SRV-SQL01</td><td>Ping from the probe</td><td class='skip'>SKIP</td><td>no IP address</td></tr>
+<tr><td>2026-09-19T06:17:41</td><td>CP30</td><td>SRV-SQL01</td><td>Application checks</td><td class='skip'>SKIP</td><td>no IP address</td></tr>
+<tr><td>2026-09-19T06:18:24</td><td>CP40</td><td>SRV-SQL01</td><td>Test VM deleted</td><td class='ok'>OK</td><td>RV-SRV-SQL01</td></tr></table>
+<p><small>Generated by ahv_backup_restore.py v2.0.0 (MIT license). Related files: RecoveryVerification-20260919-050000.csv, RecoveryVerification-20260919-050000.json, log RecoveryVerification-20260919-050000.log.</small></p>
+</body></html>
